@@ -9,6 +9,10 @@ import {
   Animated,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { StarsStackParamList } from '../../../navigation/navigation-types';
+
 import { useTheme } from '../../../theme';
 import { Star, ViewMode } from '../types/star-types';
 import { mockStars } from '../data/mock-stars';
@@ -19,6 +23,7 @@ import BaseFab from '../../../components/BaseFab';
 import { BaseItem } from '../../../components/base-types';
 
 const StarsScreen = () => {
+  const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
   const [stars, setStars] = useState<Star[]>(mockStars);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +33,8 @@ const StarsScreen = () => {
   const filteredStars = stars.filter(star => {
     const query = searchQuery.toLowerCase();
     return (
-      star.name.toLowerCase().includes(query) ||
+      star.stageName.toLowerCase().includes(query) ||
+      star.originalName?.toLowerCase().includes(query) ||
       star.bio?.toLowerCase().includes(query)
     );
   });
@@ -57,17 +63,29 @@ const StarsScreen = () => {
     setStars(prev => prev.filter(s => s.id !== id));
   }, []);
 
-  const handleAdd = () => {
-    Alert.alert('Add Star', 'Add Star screen coming soon!');
-  };
-
   const renderCardItem = ({ item }: { item: Star }) => (
-    <BaseCard item={item} onPress={handlePress} onDelete={handleDelete} />
+    <BaseCard
+      item={{ ...item, name: item.stageName }}
+      onPress={handlePress}
+      onDelete={handleDelete}
+    />
   );
 
   const renderGridItem = ({ item }: { item: Star }) => (
-    <BaseGridCard item={item} onPress={handlePress} onDelete={handleDelete} />
+    <BaseGridCard
+      item={{ ...item, name: item.stageName }}
+      onPress={handlePress}
+      onDelete={handleDelete}
+    />
   );
+
+  const handleAdd = () => {
+    navigation.navigate('AddStar', {
+      onStarAdded: (star: Star) => {
+        setStars(prev => [star, ...prev]);
+      },
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

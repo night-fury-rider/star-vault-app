@@ -1,8 +1,21 @@
+export interface CustomAttribute {
+  id: string;
+  key: string;
+  value: string;
+}
+
 export interface Star {
   id: string;
-  name: string;
+  stageName: string;
+  originalName?: string;
+  countryOfOrigin?: string;
+  birthday?: string;
+  height?: string;
+  weight?: string;
+  officialWebsite?: string;
   bio?: string;
   imagePath?: string;
+  customAttributes?: CustomAttribute[];
   createdAt: string;
   updatedAt: string;
   userId?: string;
