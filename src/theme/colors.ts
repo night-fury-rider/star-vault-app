@@ -23,6 +23,11 @@ export const PinkTheme = {
     background: '#E91E8C',
     text: '#FFFFFF',
   },
+  status: {
+    success: '#4CAF50',
+    error: '#E53935',
+    warning: '#FF9800',
+  },
 };
 
 export const SkyBlueTheme = {
@@ -50,6 +55,11 @@ export const SkyBlueTheme = {
     background: '#0288D1',
     text: '#FFFFFF',
   },
+  status: {
+    success: '#4CAF50',
+    error: '#E53935',
+    warning: '#FF9800',
+  },
 };
 
 export const FaintOrangeTheme = {
@@ -76,6 +86,11 @@ export const FaintOrangeTheme = {
   header: {
     background: '#F57C00',
     text: '#FFFFFF',
+  },
+  status: {
+    success: '#4CAF50',
+    error: '#E53935',
+    warning: '#FF9800',
   },
 };
 
