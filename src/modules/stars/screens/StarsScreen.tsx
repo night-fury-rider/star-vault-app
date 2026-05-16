@@ -55,9 +55,23 @@ const StarsScreen = () => {
     setViewMode(prev => (prev === 'card' ? 'list' : 'card'));
   };
 
-  const handlePress = useCallback((item: BaseItem) => {
-    Alert.alert(item.name, 'Navigate to Star Detail (coming soon)');
-  }, []);
+  const handlePress = useCallback(
+    (item: BaseItem) => {
+      const star = stars.find(s => s.id === item.id);
+      if (!star) {
+        return;
+      }
+      navigation.navigate('StarDetail', {
+        star,
+        onStarUpdated: (updatedStar: Star) => {
+          setStars(prev =>
+            prev.map(s => (s.id === updatedStar.id ? updatedStar : s)),
+          );
+        },
+      });
+    },
+    [stars, navigation],
+  );
 
   const handleDelete = useCallback((id: string) => {
     setStars(prev => prev.filter(s => s.id !== id));

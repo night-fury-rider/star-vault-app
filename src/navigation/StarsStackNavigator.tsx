@@ -4,6 +4,7 @@ import { useTheme } from '../theme';
 import { StarsStackParamList } from './navigation-types';
 import StarsScreen from '../modules/stars/screens/StarsScreen';
 import AddStarScreen from '../modules/stars/screens/AddStarScreen';
+import StarDetailScreen from '../modules/stars/screens/StarDetailScreen';
 
 const Stack = createStackNavigator<StarsStackParamList>();
 
@@ -29,6 +30,11 @@ const StarsStackNavigator = () => {
         name="AddStar"
         component={AddStarScreen}
         options={{ title: 'Add Star' }}
+      />
+      <Stack.Screen
+        name="StarDetail"
+        component={StarDetailScreen}
+        options={{ title: '' }}
       />
     </Stack.Navigator>
   );
