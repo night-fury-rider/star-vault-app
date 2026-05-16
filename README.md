@@ -145,7 +145,7 @@ npx react-native run-ios
 **Android:**
 
 ```bash
-npx react-native run-android
+npm run android
 ```
 
 ---
