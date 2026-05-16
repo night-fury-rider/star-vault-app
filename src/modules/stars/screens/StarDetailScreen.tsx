@@ -9,8 +9,11 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { GalleryMedia } from '../../../navigation/navigation-types';
+
 import { useTheme } from '../../../theme';
 import { StarsStackParamList } from '../../../navigation/navigation-types';
 import { Star } from '../types/star-types';
@@ -81,6 +84,10 @@ const StarDetailScreen = () => {
       age--;
     }
     return age;
+  };
+
+  const handleOpenGallery = () => {
+    navigation.navigate('StarGallery', { star });
   };
 
   const renderInfoRow = (label: string, value?: string | null) => {
@@ -238,6 +245,14 @@ const StarDetailScreen = () => {
           </View>
         )}
 
+        {/* Gallery Button */}
+        <TouchableOpacity
+          style={[styles.galleryButton, { backgroundColor: theme.primary }]}
+          onPress={handleOpenGallery}
+        >
+          <Text style={styles.galleryButtonText}>📸 View Gallery</Text>
+        </TouchableOpacity>
+
         <View style={styles.bottomSpacing} />
       </View>
     </ScrollView>
@@ -247,6 +262,17 @@ const StarDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  galleryButton: {
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  galleryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   heroContainer: {
     height: 320,

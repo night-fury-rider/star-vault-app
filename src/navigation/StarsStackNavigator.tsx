@@ -5,6 +5,8 @@ import { StarsStackParamList } from './navigation-types';
 import StarsScreen from '../modules/stars/screens/StarsScreen';
 import AddStarScreen from '../modules/stars/screens/AddStarScreen';
 import StarDetailScreen from '../modules/stars/screens/StarDetailScreen';
+import StarGalleryScreen from '../modules/stars/screens/StarGalleryScreen';
+import MediaViewerScreen from '../modules/stars/screens/MediaViewerScreen';
 
 const Stack = createStackNavigator<StarsStackParamList>();
 
@@ -35,6 +37,19 @@ const StarsStackNavigator = () => {
         name="StarDetail"
         component={StarDetailScreen}
         options={{ title: '' }}
+      />
+      <Stack.Screen
+        name="StarGallery"
+        component={StarGalleryScreen}
+        options={{ title: 'Gallery' }}
+      />
+      <Stack.Screen
+        name="MediaViewer"
+        component={MediaViewerScreen}
+        options={{
+          headerShown: false,
+          cardStyle: { backgroundColor: '#000000' },
+        }}
       />
     </Stack.Navigator>
   );
