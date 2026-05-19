@@ -9,25 +9,26 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { GalleryMedia } from '../../../navigation/navigation-types';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '../../../theme';
 import { StarsStackParamList } from '../../../navigation/navigation-types';
-import { Star } from '../types/star-types';
 import { mockMovies, Movie } from '../../movies/data/mock-movies';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
+import { useAppDispatch } from '../../../store/store-hooks';
+import { deleteStar } from '../../../store/thunks/star-thunks';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'StarDetail'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'StarDetail'>;
 
 const StarDetailScreen = () => {
   const { theme } = useTheme();
+  const dispatch = useAppDispatch();
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RoutePropType>();
-  const { star, onStarUpdated } = route.params;
+  const { star } = route.params;
   const [movies, setMovies] = useState<Movie[]>([]);
 
   // Load mock movies for this star
@@ -36,22 +37,43 @@ const StarDetailScreen = () => {
     setMovies(starMovies);
   }, [star.id]);
 
-  // Edit button in header
+  // Update useLayoutEffect
   useLayoutEffect(() => {
     navigation.setOptions({
       title: star.stageName,
       headerRight: () => (
-        <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.header.text }]}>
-            Edit
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
+            <Icon name="pencil-outline" size={22} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
+            <Icon name="trash-outline" size={22} />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation, star, theme]);
 
   const handleEdit = () => {
     Alert.alert('Edit Star', 'Edit screen coming soon!');
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Star',
+      `Are you sure you want to delete "${star.stageName}"? This will also delete all gallery media.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await dispatch(deleteStar(star.id));
+            navigation.popToTop();
+          },
+        },
+      ],
+    );
   };
 
   const handleOpenWebsite = () => {
@@ -273,6 +295,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  headerButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   heroContainer: {
     height: 320,
