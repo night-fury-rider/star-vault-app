@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,28 +7,41 @@ import {
   TextInput,
   TouchableOpacity,
   Animated,
-  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { StarsStackParamList } from '../../../navigation/navigation-types';
-
 import { useTheme } from '../../../theme';
-import { Star, ViewMode } from '../types/star-types';
-import { mockStars } from '../data/mock-stars';
+import { Star } from '../types/star-types';
+import { StarsStackParamList } from '../../../navigation/navigation-types';
+import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
+import { fetchAllStars, deleteStar } from '../../../store/thunks/star-thunks';
 import BaseCard from '../../../components/BaseCard';
 import BaseGridCard from '../../../components/BaseGridCard';
 import BaseEmptyState from '../../../components/BaseEmptyState';
 import BaseFab from '../../../components/BaseFab';
 import { BaseItem } from '../../../components/base-types';
 
+type NavProp = StackNavigationProp<StarsStackParamList, 'StarsList'>;
+type ViewMode = 'card' | 'list';
+
 const StarsScreen = () => {
-  const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
-  const [stars, setStars] = useState<Star[]>(mockStars);
+  const navigation = useNavigation<NavProp>();
+  const dispatch = useAppDispatch();
+
+  const { list: stars, loading } = useAppSelector(state => state.stars);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Load stars from SQLite on mount
+  useEffect(() => {
+    console.log('🏠 StarsScreen mounted — fetching stars');
+    dispatch(fetchAllStars()).then(result => {
+      console.log('🏠 fetchAllStars result type:', result.type);
+      console.log('🏠 fetchAllStars payload:', JSON.stringify(result.payload));
+    });
+  }, [dispatch]);
 
   const filteredStars = stars.filter(star => {
     const query = searchQuery.toLowerCase();
@@ -61,21 +74,21 @@ const StarsScreen = () => {
       if (!star) {
         return;
       }
-      navigation.navigate('StarDetail', {
-        star,
-        onStarUpdated: (updatedStar: Star) => {
-          setStars(prev =>
-            prev.map(s => (s.id === updatedStar.id ? updatedStar : s)),
-          );
-        },
-      });
+      navigation.navigate('StarDetail', { star });
     },
     [stars, navigation],
   );
 
-  const handleDelete = useCallback((id: string) => {
-    setStars(prev => prev.filter(s => s.id !== id));
-  }, []);
+  const handleDelete = useCallback(
+    (id: string) => {
+      dispatch(deleteStar(id));
+    },
+    [dispatch],
+  );
+
+  const handleAdd = () => {
+    navigation.navigate('AddStar');
+  };
 
   const renderCardItem = ({ item }: { item: Star }) => (
     <BaseCard
@@ -92,14 +105,6 @@ const StarsScreen = () => {
       onDelete={handleDelete}
     />
   );
-
-  const handleAdd = () => {
-    navigation.navigate('AddStar', {
-      onStarAdded: (star: Star) => {
-        setStars(prev => [star, ...prev]);
-      },
-    });
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -133,7 +138,7 @@ const StarsScreen = () => {
           onPress={toggleViewMode}
         >
           <Text style={styles.toggleIcon}>
-            {viewMode === 'list' ? '☰' : '⊞'}
+            {viewMode === 'card' ? '☰' : '⊞'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -158,29 +163,30 @@ const StarsScreen = () => {
             filteredStars.length === 0 && styles.emptyList,
           ]}
           ListEmptyComponent={
-            <BaseEmptyState
-              searchQuery={searchQuery}
-              entityName="stars"
-              emptyMessage="Start building your star vault by tapping the + button below."
-            />
+            !loading ? (
+              <BaseEmptyState
+                searchQuery={searchQuery}
+                entityName="stars"
+                emptyMessage="Start building your star vault by tapping the + button below."
+              />
+            ) : null
           }
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={
-            viewMode === 'card' ? () => <View style={styles.separator} /> : null
+            viewMode === 'list' ? () => <View style={styles.separator} /> : null
           }
+          refreshing={loading}
+          onRefresh={() => dispatch(fetchAllStars())}
         />
       </Animated.View>
 
-      {/* FAB */}
       <BaseFab onPress={handleAdd} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -197,16 +203,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
   },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    height: 44,
-    padding: 0,
-  },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 15, height: 44, padding: 0 },
   toggleButton: {
     width: 44,
     height: 44,
@@ -215,28 +213,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  toggleIcon: {
-    fontSize: 20,
-  },
+  toggleIcon: { fontSize: 20 },
   countText: {
     fontSize: 12,
     fontWeight: '500',
     paddingHorizontal: 20,
     marginBottom: 4,
   },
-  listContainer: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 100,
-    paddingTop: 4,
-  },
-  emptyList: {
-    flexGrow: 1,
-  },
-  separator: {
-    height: 4,
-  },
+  listContainer: { flex: 1 },
+  listContent: { paddingBottom: 100, paddingTop: 4 },
+  emptyList: { flexGrow: 1 },
+  separator: { height: 4 },
 });
 
 export default StarsScreen;

@@ -18,6 +18,8 @@ import { CustomAttribute, Star } from '../types/star-types';
 import BaseInput from '../../../components/BaseInput';
 import BaseDatePicker from '../../../components/BaseDatePicker';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
+import { useAppDispatch } from '../../../store/store-hooks';
+import { createStar } from '../../../store/thunks/star-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,10 +27,8 @@ type NavProp = StackNavigationProp<StarsStackParamList, 'AddStar'>;
 
 const AddStarScreen = () => {
   const { theme } = useTheme();
-  type RoutePropType = RouteProp<StarsStackParamList, 'AddStar'>;
   const navigation = useNavigation<NavProp>();
-  const route = useRoute<RoutePropType>();
-  const { onStarAdded } = route.params;
+  const dispatch = useAppDispatch();
 
   // Standard fields
   const [stageName, setStageName] = useState('');
@@ -132,10 +132,25 @@ const AddStarScreen = () => {
         updatedAt: new Date().toISOString(),
       };
 
-      onStarAdded(newStar);
+      console.log('⭐ Dispatching createStar...');
+      const result = await dispatch(createStar(newStar));
+      console.log('⭐ Dispatch result type:', result.type);
+      console.log(
+        '⭐ Dispatch result payload:',
+        JSON.stringify(result.payload),
+      );
+
+      if (createStar.rejected.match(result)) {
+        console.error('❌ createStar was rejected:', result.payload);
+        Alert.alert('Error', String(result.payload) ?? 'Failed to save star');
+        return;
+      }
+
+      console.log('✅ Star saved successfully, going back');
       navigation.goBack();
-    } catch {
-      Alert.alert('Error', 'Failed to save star. Please try again.');
+    } catch (e: any) {
+      console.error('❌ handleSave caught error:', e);
+      Alert.alert('Error', e?.message ?? 'Failed to save star');
     } finally {
       setSaving(false);
     }

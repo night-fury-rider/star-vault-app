@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,6 +19,12 @@ import {
   GalleryMedia,
 } from '../../../navigation/navigation-types';
 import BaseFab from '../../../components/BaseFab';
+import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
+import {
+  fetchGallery,
+  addMedia as addMediaThunk,
+  deleteMediaBatch as deleteMediaBatchThunk,
+} from '../../../store/thunks/gallery-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -33,20 +40,29 @@ const StarGalleryScreen = () => {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RoutePropType>();
   const { star } = route.params;
+  const dispatch = useAppDispatch();
 
-  const [mediaList, setMediaList] = useState<GalleryMedia[]>([]);
+  const mediaList = useAppSelector(
+    state => state.gallery.mediaByStarId[star.id] || [],
+  );
+  const loading = useAppSelector(state => state.gallery.loading);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Add media
+  // Load gallery on mount
+  useEffect(() => {
+    dispatch(fetchGallery(star.id));
+  }, [star.id, dispatch]);
+
   const handleAddMedia = () => {
     Alert.alert('Add Media', 'Choose source', [
       {
         text: '📷 Camera — Photo',
         onPress: () =>
           launchCamera({ mediaType: 'photo', quality: 0.9 }, res => {
-            if (res.assets?.[0]) {
-              addMedia(res.assets[0].uri!, 'image');
+            if (res.assets?.[0]?.uri) {
+              addMedia(res.assets[0].uri, 'image');
             }
           }),
       },
@@ -54,8 +70,8 @@ const StarGalleryScreen = () => {
         text: '🎥 Camera — Video',
         onPress: () =>
           launchCamera({ mediaType: 'video', videoQuality: 'high' }, res => {
-            if (res.assets?.[0]) {
-              addMedia(res.assets[0].uri!, 'video');
+            if (res.assets?.[0]?.uri) {
+              addMedia(res.assets[0].uri, 'video');
             }
           }),
       },
@@ -95,10 +111,9 @@ const StarGalleryScreen = () => {
       type,
       createdAt: new Date().toISOString(),
     };
-    setMediaList(prev => [newMedia, ...prev]);
+    dispatch(addMediaThunk({ starId: star.id, media: newMedia }));
   };
 
-  // Tap to view fullscreen
   const handleMediaPress = useCallback(
     (index: number) => {
       if (selectionMode) {
@@ -113,7 +128,6 @@ const StarGalleryScreen = () => {
     [selectionMode, mediaList, navigation],
   );
 
-  // Long press to enter selection mode
   const handleLongPress = (id: string) => {
     setSelectionMode(true);
     setSelectedIds(new Set([id]));
@@ -144,7 +158,12 @@ const StarGalleryScreen = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setMediaList(prev => prev.filter(m => !selectedIds.has(m.id)));
+            dispatch(
+              deleteMediaBatchThunk({
+                starId: star.id,
+                mediaIds: Array.from(selectedIds),
+              }),
+            );
             setSelectedIds(new Set());
             setSelectionMode(false);
           },
@@ -166,7 +185,6 @@ const StarGalleryScreen = () => {
     index: number;
   }) => {
     const isSelected = selectedIds.has(item.id);
-
     return (
       <TouchableOpacity
         style={[styles.mediaItem, { opacity: isSelected ? 0.7 : 1 }]}
@@ -174,21 +192,16 @@ const StarGalleryScreen = () => {
         onLongPress={() => handleLongPress(item.id)}
         activeOpacity={0.8}
       >
-        {/* Thumbnail */}
         <Image
           source={{ uri: item.uri }}
           style={styles.thumbnail}
           resizeMode="cover"
         />
-
-        {/* Video badge */}
         {item.type === 'video' && (
           <View style={styles.videoBadge}>
             <Text style={styles.videoBadgeText}>▶</Text>
           </View>
         )}
-
-        {/* Selection overlay */}
         {selectionMode && (
           <View
             style={[
@@ -218,10 +231,7 @@ const StarGalleryScreen = () => {
         <View
           style={[
             styles.toolbar,
-            {
-              backgroundColor: theme.surface,
-              borderBottomColor: theme.border,
-            },
+            { backgroundColor: theme.surface, borderBottomColor: theme.border },
           ]}
         >
           <TouchableOpacity onPress={handleCancelSelection}>
@@ -243,14 +253,21 @@ const StarGalleryScreen = () => {
       )}
 
       {/* Media count */}
-      {mediaList.length > 0 && (
+      {mediaList.length > 0 && !loading && (
         <Text style={[styles.countText, { color: theme.text.muted }]}>
           {mediaList.length} item{mediaList.length !== 1 ? 's' : ''}
         </Text>
       )}
 
+      {/* Loading */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      )}
+
       {/* Grid */}
-      {mediaList.length === 0 ? (
+      {!loading && mediaList.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🎞</Text>
           <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>
@@ -271,16 +288,13 @@ const StarGalleryScreen = () => {
         />
       )}
 
-      {/* FAB */}
       {!selectionMode && <BaseFab onPress={handleAddMedia} icon="+" />}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   toolbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -289,33 +303,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  toolbarAction: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  toolbarCount: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
+  toolbarAction: { fontSize: 15, fontWeight: '600' },
+  toolbarCount: { fontSize: 15, fontWeight: '700' },
   countText: {
     fontSize: 12,
     fontWeight: '500',
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  grid: {
-    paddingBottom: 100,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  grid: { paddingBottom: 100 },
   mediaItem: {
     width: ITEM_SIZE,
     height: ITEM_SIZE,
     margin: 1,
     position: 'relative',
   },
-  thumbnail: {
-    width: '100%',
-    height: '100%',
-  },
+  thumbnail: { width: '100%', height: '100%' },
   videoBadge: {
     position: 'absolute',
     bottom: 6,
@@ -325,11 +333,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  videoBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-  },
+  videoBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   selectionOverlay: {
     position: 'absolute',
     top: 0,
@@ -346,32 +350,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkMark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  checkMark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
+  emptyIcon: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 8,
     textAlign: 'center',
   },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
 });
 
 export default StarGalleryScreen;
