@@ -7,7 +7,6 @@
     "android": "react-native run-android",
     "android-build-apk": "cd android && ./gradlew clean && ./gradlew assembleRelease",
     "clean-gradle": "cd android && ./gradlew clean",
-    "clean-watchman": "watchman watch-del-all && watchman shutdown-server",
     "prodmode": "node scripts/switchAppMode.js prod",
     "ios": "react-native run-ios",
     "lint": "eslint .",
