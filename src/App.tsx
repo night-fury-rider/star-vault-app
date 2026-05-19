@@ -8,6 +8,8 @@ import TabNavigator from './navigation/TabNavigator';
 import { store } from './store/store';
 import { initDBAdapter } from './db/db-provider';
 import { createTables } from './db/db-init';
+import StorageService from './services/StorageService';
+import LoggerService from './services/LoggerService';
 
 // ─── Inner component — DB init lives here, inside Provider ───
 const AppContent = () => {
@@ -15,18 +17,24 @@ const AppContent = () => {
   const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
-    const setup = async () => {
+    const setupDB = async () => {
       try {
         const adapter = initDBAdapter();
         await createTables(adapter);
-
         setDbReady(true);
       } catch (e: any) {
         console.error('❌ Setup error:', e);
         setDbError(e?.message ?? 'Failed to initialize database');
       }
     };
-    setup();
+
+    try {
+      StorageService.init();
+    } catch (err) {
+      LoggerService.error('Error while initializing Storage Service', err);
+    }
+
+    setupDB();
   }, []);
 
   if (dbError) {

@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Themes, ThemeName, ThemeType, SkyBlueTheme } from './colors';
+import StorageService from '../services/StorageService';
+import LoggerService from '../services/LoggerService';
+
+const THEME_KEY = 'starvault_theme';
 
 interface ThemeContextType {
   theme: ThemeType;
@@ -7,7 +11,6 @@ interface ThemeContextType {
   setTheme: (name: ThemeName) => void;
 }
 
-// ✅ must have a default value
 const ThemeContext = createContext<ThemeContextType>({
   theme: SkyBlueTheme,
   themeName: 'skyblue',
@@ -15,14 +18,33 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('skyblue');
+  const [themeName, setThemeName] = useState<ThemeName>(() => {
+    try {
+      const saved = StorageService.get(THEME_KEY);
+      if (saved && saved in Themes) {
+        return saved as ThemeName;
+      }
+    } catch (e) {
+      LoggerService.error('❌ Failed to load theme:', e);
+    }
+    return 'skyblue';
+  });
+
+  const setTheme = (name: ThemeName) => {
+    try {
+      setThemeName(name);
+      StorageService.set(THEME_KEY, name);
+    } catch (e) {
+      LoggerService.error('❌ Failed to save theme:', e);
+    }
+  };
 
   return (
     <ThemeContext.Provider
       value={{
         theme: Themes[themeName],
         themeName,
-        setTheme: setThemeName,
+        setTheme,
       }}
     >
       {children}
@@ -30,7 +52,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// ✅ guard against null context
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
