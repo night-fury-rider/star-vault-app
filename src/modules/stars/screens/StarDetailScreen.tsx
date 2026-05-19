@@ -19,6 +19,11 @@ import { mockMovies, Movie } from '../../movies/data/mock-movies';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch } from '../../../store/store-hooks';
 import { deleteStar } from '../../../store/thunks/star-thunks';
+import {
+  cmToFeetInches,
+  formatBirthdayWithAge,
+  kgToLbs,
+} from '../../../utils/unit-utils';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'StarDetail'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'StarDetail'>;
@@ -182,16 +187,9 @@ const StarDetailScreen = () => {
             { backgroundColor: theme.surface, borderColor: theme.border },
           ]}
         >
-          {renderInfoRow(
-            'Birthday',
-            formatBirthday(star.birthday)
-              ? `${formatBirthday(star.birthday)} (Age ${calculateAge(
-                  star.birthday,
-                )})`
-              : null,
-          )}
-          {renderInfoRow('Height', star.height ? `${star.height} cm` : null)}
-          {renderInfoRow('Weight', star.weight ? `${star.weight} kg` : null)}
+          {renderInfoRow('Birthday', formatBirthdayWithAge(star.birthday))}
+          {renderInfoRow('Height', cmToFeetInches(star.height))}
+          {renderInfoRow('Weight', kgToLbs(star.weight))}
           {star.officialWebsite && (
             <TouchableOpacity
               style={[styles.infoRow, { borderBottomColor: theme.border }]}
