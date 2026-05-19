@@ -20,21 +20,6 @@ const AppContent = () => {
         const adapter = initDBAdapter();
         await createTables(adapter);
 
-        console.log('🧪 Testing write...');
-        await adapter.execute(
-          `INSERT OR REPLACE INTO Person (id, stageName, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?);`,
-          [
-            'test-123',
-            'Test Star',
-            new Date().toISOString(),
-            new Date().toISOString(),
-          ],
-        );
-        console.log('🧪 Write done — now reading...');
-        const check = await adapter.execute(`SELECT * FROM Person;`);
-        console.log('🧪 All persons after write:', JSON.stringify(check));
-
         setDbReady(true);
       } catch (e: any) {
         console.error('❌ Setup error:', e);
