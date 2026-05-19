@@ -117,12 +117,19 @@ const StarDetailScreen = () => {
     navigation.navigate('StarGallery', { star });
   };
 
-  const renderInfoRow = (label: string, value?: string | null) => {
+  const renderInfoRow = (
+    label: string,
+    value?: string | null,
+    index?: number,
+  ) => {
     if (!value) {
       return null;
     }
     return (
-      <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+      <View
+        key={label + index}
+        style={[styles.infoRow, { borderBottomColor: theme.border }]}
+      >
         <Text style={[styles.infoLabel, { color: theme.text.muted }]}>
           {label}
         </Text>
@@ -218,8 +225,8 @@ const StarDetailScreen = () => {
                 { backgroundColor: theme.surface, borderColor: theme.border },
               ]}
             >
-              {star.customAttributes.map(attr =>
-                renderInfoRow(attr.key, attr.value),
+              {star.customAttributes.map((attr, index) =>
+                renderInfoRow(attr.key, attr.value, index),
               )}
             </View>
           </>
