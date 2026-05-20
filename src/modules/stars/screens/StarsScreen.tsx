@@ -24,24 +24,92 @@ import { BaseItem } from '../../../components/base-types';
 type NavProp = StackNavigationProp<StarsStackParamList, 'StarsList'>;
 type ViewMode = 'card' | 'list';
 
+// ─── Coming Soon Screen ───────────────────────────────────────
+const ComingSoonScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <View
+      style={[comingStyles.container, { backgroundColor: theme.background }]}
+    >
+      <Text style={comingStyles.icon}>🚀</Text>
+      <Text style={[comingStyles.title, { color: theme.text.primary }]}>
+        Coming Soon
+      </Text>
+      <Text style={[comingStyles.subtitle, { color: theme.text.secondary }]}>
+        This feature will be available in an upcoming release.
+      </Text>
+    </View>
+  );
+};
+
+const comingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  icon: {
+    fontSize: 64,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+});
+
+// ─── Main Screen ──────────────────────────────────────────────
 const StarsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavProp>();
   const dispatch = useAppDispatch();
 
   const { list: stars, loading } = useAppSelector(state => state.stars);
+  const isUnlocked = useAppSelector(state => state.access.isUnlocked);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Load stars from SQLite on mount
+  // Load stars from SQLite on mount — must be before any early return
   useEffect(() => {
+    if (!isUnlocked) return;
     console.log('🏠 StarsScreen mounted — fetching stars');
     dispatch(fetchAllStars()).then(result => {
       console.log('🏠 fetchAllStars result type:', result.type);
       console.log('🏠 fetchAllStars payload:', JSON.stringify(result.payload));
     });
-  }, [dispatch]);
+  }, [dispatch, isUnlocked]);
+
+  const handlePress = useCallback(
+    (item: BaseItem) => {
+      const star = stars.find(s => s.id === item.id);
+      if (!star) {
+        return;
+      }
+      navigation.navigate('StarDetail', { star });
+    },
+    [stars, navigation],
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      dispatch(deleteStar(id));
+    },
+    [dispatch],
+  );
+
+  // Gate — show Coming Soon if locked (after all hooks)
+  if (!isUnlocked) {
+    return <ComingSoonScreen />;
+  }
 
   const filteredStars = stars.filter(star => {
     const query = searchQuery.toLowerCase();
@@ -67,24 +135,6 @@ const StarsScreen = () => {
     ]).start();
     setViewMode(prev => (prev === 'card' ? 'list' : 'card'));
   };
-
-  const handlePress = useCallback(
-    (item: BaseItem) => {
-      const star = stars.find(s => s.id === item.id);
-      if (!star) {
-        return;
-      }
-      navigation.navigate('StarDetail', { star });
-    },
-    [stars, navigation],
-  );
-
-  const handleDelete = useCallback(
-    (id: string) => {
-      dispatch(deleteStar(id));
-    },
-    [dispatch],
-  );
 
   const handleAdd = () => {
     navigation.navigate('AddStar');

@@ -10,6 +10,9 @@ import { initDBAdapter } from './db/db-provider';
 import { createTables } from './db/db-init';
 import StorageService from './services/StorageService';
 import LoggerService from './services/LoggerService';
+import { setUnlocked } from './store/slices/access-slice';
+
+const ACCESS_KEY = 'starvault_access';
 
 // ─── Inner component — DB init lives here, inside Provider ───
 const AppContent = () => {
@@ -32,6 +35,16 @@ const AppContent = () => {
       StorageService.init();
     } catch (err) {
       LoggerService.error('Error while initializing Storage Service', err);
+    }
+
+    // Hydrate access state from persisted storage
+    try {
+      const persisted = StorageService.get(ACCESS_KEY, 'boolean');
+      if (persisted === true) {
+        store.dispatch(setUnlocked(true));
+      }
+    } catch (err) {
+      LoggerService.error('Error reading access state', err);
     }
 
     setupDB();
