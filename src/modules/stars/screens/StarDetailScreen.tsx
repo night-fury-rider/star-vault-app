@@ -17,7 +17,7 @@ import { useTheme } from '../../../theme';
 import { StarsStackParamList } from '../../../navigation/navigation-types';
 import { mockMovies, Movie } from '../../movies/data/mock-movies';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
-import { useAppDispatch } from '../../../store/store-hooks';
+import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { deleteStar } from '../../../store/thunks/star-thunks';
 import {
   cmToFeetInches,
@@ -33,7 +33,11 @@ const StarDetailScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RoutePropType>();
-  const { star } = route.params;
+  const { star: routeStar } = route.params;
+  const star =
+    useAppSelector(state =>
+      state.stars.list.find(s => s.id === routeStar.id),
+    ) ?? routeStar;
   const [movies, setMovies] = useState<Movie[]>([]);
 
   // Load mock movies for this star
@@ -60,7 +64,7 @@ const StarDetailScreen = () => {
   }, [navigation, star, theme]);
 
   const handleEdit = () => {
-    Alert.alert('Edit Star', 'Edit screen coming soon!');
+    navigation.navigate('AddStar', { star });
   };
 
   const handleDelete = () => {

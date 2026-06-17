@@ -31,7 +31,9 @@ const StarsStackNavigator = () => {
       <Stack.Screen
         name="AddStar"
         component={AddStarScreen}
-        options={{ title: 'Add Star' }}
+        options={({ route }) => ({
+          title: route.params?.star ? 'Edit Star' : 'Add Star',
+        })}
       />
       <Stack.Screen
         name="StarDetail"

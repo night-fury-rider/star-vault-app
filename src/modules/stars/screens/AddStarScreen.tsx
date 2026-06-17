@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { useTheme } from '../../../theme';
@@ -19,38 +19,53 @@ import BaseInput from '../../../components/BaseInput';
 import BaseDatePicker from '../../../components/BaseDatePicker';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch } from '../../../store/store-hooks';
-import { createStar } from '../../../store/thunks/star-thunks';
+import { createStar, updateStar } from '../../../store/thunks/star-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'AddStar'>;
+type RoutePropType = RouteProp<StarsStackParamList, 'AddStar'>;
 
 const AddStarScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavProp>();
+  const route = useRoute<RoutePropType>();
   const dispatch = useAppDispatch();
 
-  // Standard fields
-  const [stageName, setStageName] = useState('');
-  const [originalName, setOriginalName] = useState('');
-  const [countryOfOrigin, setCountryOfOrigin] = useState('');
-  const [birthday, setBirthday] = useState<Date | undefined>();
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-  const [officialWebsite, setOfficialWebsite] = useState('');
-  const [bio, setBio] = useState('');
-  const [imagePath, setImagePath] = useState<string | undefined>();
+  // ─── Edit mode detection ──────────────────────────────────
+  const existingStar = route.params?.star;
+  const isEditMode = !!existingStar;
 
-  // Custom attributes
-  const [customAttributes, setCustomAttributes] = useState<CustomAttribute[]>(
-    [],
+  // ─── Standard fields — pre-filled in edit mode ────────────
+  const [stageName, setStageName] = useState(existingStar?.stageName ?? '');
+  const [originalName, setOriginalName] = useState(
+    existingStar?.originalName ?? '',
+  );
+  const [countryOfOrigin, setCountryOfOrigin] = useState(
+    existingStar?.countryOfOrigin ?? '',
+  );
+  const [birthday, setBirthday] = useState<Date | undefined>(
+    existingStar?.birthday ? new Date(existingStar.birthday) : undefined,
+  );
+  const [height, setHeight] = useState(existingStar?.height ?? '');
+  const [weight, setWeight] = useState(existingStar?.weight ?? '');
+  const [officialWebsite, setOfficialWebsite] = useState(
+    existingStar?.officialWebsite ?? '',
+  );
+  const [bio, setBio] = useState(existingStar?.bio ?? '');
+  const [imagePath, setImagePath] = useState<string | undefined>(
+    existingStar?.imagePath,
   );
 
-  // Validation
+  // ─── Custom attributes — pre-filled in edit mode ──────────
+  const [customAttributes, setCustomAttributes] = useState<CustomAttribute[]>(
+    existingStar?.customAttributes ?? [],
+  );
+
   const [errors, setErrors] = useState<{ stageName?: string }>({});
   const [saving, setSaving] = useState(false);
 
-  // Image picker
+  // ─── Image picker ─────────────────────────────────────────
   const handlePickImage = () => {
     Alert.alert('Select Image', 'Choose image source', [
       {
@@ -75,7 +90,7 @@ const AddStarScreen = () => {
     ]);
   };
 
-  // Custom attributes
+  // ─── Custom attributes ────────────────────────────────────
   const handleAddAttribute = () => {
     setCustomAttributes(prev => [
       ...prev,
@@ -97,7 +112,7 @@ const AddStarScreen = () => {
     setCustomAttributes(prev => prev.filter(attr => attr.id !== id));
   };
 
-  // Validation
+  // ─── Validation ───────────────────────────────────────────
   const validate = (): boolean => {
     const newErrors: { stageName?: string } = {};
     if (!stageName.trim()) {
@@ -107,49 +122,76 @@ const AddStarScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Save
+  // ─── Save ─────────────────────────────────────────────────
   const handleSave = async () => {
     if (!validate()) {
       return;
     }
     setSaving(true);
     try {
-      const newStar: Star = {
-        id: uuidv4(),
-        stageName,
-        originalName: originalName || undefined,
-        countryOfOrigin: countryOfOrigin || undefined,
-        birthday: birthday?.toISOString() || undefined,
-        height: height || undefined,
-        weight: weight || undefined,
-        officialWebsite: officialWebsite || undefined,
-        bio: bio || undefined,
-        imagePath: imagePath || undefined,
-        customAttributes: customAttributes.filter(
-          attr => attr.key.trim() && attr.value.trim(),
-        ),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      if (isEditMode) {
+        // ─── UPDATE ───────────────────────────────────────
+        const updatedStar: Star = {
+          ...existingStar!,
+          stageName,
+          originalName: originalName || undefined,
+          countryOfOrigin: countryOfOrigin || undefined,
+          birthday: birthday?.toISOString() || undefined,
+          height: height || undefined,
+          weight: weight || undefined,
+          officialWebsite: officialWebsite || undefined,
+          bio: bio || undefined,
+          imagePath: imagePath || undefined,
+          customAttributes: customAttributes.filter(
+            attr => attr.key.trim() && attr.value.trim(),
+          ),
+          updatedAt: new Date().toISOString(),
+        };
 
-      console.log('⭐ Dispatching createStar...');
-      const result = await dispatch(createStar(newStar));
-      console.log('⭐ Dispatch result type:', result.type);
-      console.log(
-        '⭐ Dispatch result payload:',
-        JSON.stringify(result.payload),
-      );
+        console.log('✏️ Dispatching updateStar...');
+        const result = await dispatch(updateStar(updatedStar));
 
-      if (createStar.rejected.match(result)) {
-        console.error('❌ createStar was rejected:', result.payload);
-        Alert.alert('Error', String(result.payload) ?? 'Failed to save star');
-        return;
+        if (updateStar.rejected.match(result)) {
+          Alert.alert(
+            'Error',
+            String(result.payload) ?? 'Failed to update star',
+          );
+          return;
+        }
+
+        // Go back to detail screen with updated star
+        navigation.goBack();
+      } else {
+        // ─── CREATE ───────────────────────────────────────
+        const newStar: Star = {
+          id: uuidv4(),
+          stageName,
+          originalName: originalName || undefined,
+          countryOfOrigin: countryOfOrigin || undefined,
+          birthday: birthday?.toISOString() || undefined,
+          height: height || undefined,
+          weight: weight || undefined,
+          officialWebsite: officialWebsite || undefined,
+          bio: bio || undefined,
+          imagePath: imagePath || undefined,
+          customAttributes: customAttributes.filter(
+            attr => attr.key.trim() && attr.value.trim(),
+          ),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        console.log('⭐ Dispatching createStar...');
+        const result = await dispatch(createStar(newStar));
+
+        if (createStar.rejected.match(result)) {
+          Alert.alert('Error', String(result.payload) ?? 'Failed to save star');
+          return;
+        }
+
+        navigation.goBack();
       }
-
-      console.log('✅ Star saved successfully, going back');
-      navigation.goBack();
     } catch (e: any) {
-      console.error('❌ handleSave caught error:', e);
       Alert.alert('Error', e?.message ?? 'Failed to save star');
     } finally {
       setSaving(false);
@@ -324,7 +366,9 @@ const AddStarScreen = () => {
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Star</Text>
+            <Text style={styles.saveButtonText}>
+              {isEditMode ? 'Update Star' : 'Save Star'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
