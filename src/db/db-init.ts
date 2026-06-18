@@ -4,8 +4,6 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
   try {
     console.log('🏗 Creating tables...');
 
-    // await adapter.execute('PRAGMA foreign_keys = ON;');
-
     await adapter.execute(`
       CREATE TABLE IF NOT EXISTS Person (
         id TEXT PRIMARY KEY NOT NULL,
@@ -50,7 +48,12 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
         id TEXT PRIMARY KEY NOT NULL,
         title TEXT NOT NULL,
         year INTEGER NOT NULL,
-        createdAt TEXT NOT NULL
+        genre TEXT,
+        director TEXT,
+        synopsis TEXT,
+        imagePath TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
       );
     `);
 
@@ -65,8 +68,18 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
       );
     `);
 
+    await adapter.execute(`
+      CREATE TABLE IF NOT EXISTS MovieImage (
+        id TEXT PRIMARY KEY NOT NULL,
+        movieId TEXT NOT NULL,
+        filePath TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'image',
+        createdAt TEXT NOT NULL,
+        FOREIGN KEY (movieId) REFERENCES Movie(id) ON DELETE CASCADE
+      );
+    `);
+
     console.log('✅ All tables created');
-    // Verify tables exist
     const tables = await adapter.execute(
       `SELECT name FROM sqlite_master WHERE type='table';`,
     );

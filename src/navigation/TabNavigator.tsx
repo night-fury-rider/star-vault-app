@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import StarsStackNavigator from './StarsStackNavigator';
-import MoviesScreen from '../modules/movies/screens/MoviesScreen';
+import MoviesStackNavigator from './MoviesStackNavigator';
 import SettingsScreen from '../modules/settings/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -42,7 +42,7 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen name="Stars" component={StarsStackNavigator} />
-      <Tab.Screen name="Movies" component={MoviesScreen} />
+      <Tab.Screen name="Movies" component={MoviesStackNavigator} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

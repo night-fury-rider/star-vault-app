@@ -3,6 +3,7 @@ import starsReducer from './slices/stars-slice';
 import moviesReducer from './slices/movies-slice';
 import galleryReducer from './slices/gallery-slice';
 import accessReducer from './slices/access-slice';
+import movieGalleryReducer from './slices/movie-gallery-slice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     movies: moviesReducer,
     gallery: galleryReducer,
     access: accessReducer,
+    movieGallery: movieGalleryReducer,
   },
 });
 

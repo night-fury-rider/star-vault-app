@@ -1,11 +1,11 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface Movie {
-  id: string;
-  title: string;
-  year: number;
-  createdAt: string;
-}
+import { createSlice } from '@reduxjs/toolkit';
+import { Movie } from '../../modules/movies/types/movie-types';
+import {
+  fetchAllMovies,
+  createMovie,
+  updateMovie,
+  deleteMovie,
+} from '../thunks/movie-thunks';
 
 interface MoviesState {
   list: Movie[];
@@ -22,38 +22,40 @@ const initialState: MoviesState = {
 const moviesSlice = createSlice({
   name: 'movies',
   initialState,
-  reducers: {
-    setMovies(state, action: PayloadAction<Movie[]>) {
+  reducers: {},
+  extraReducers: builder => {
+    // Fetch all
+    builder.addCase(fetchAllMovies.pending, state => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchAllMovies.fulfilled, (state, action) => {
+      state.loading = false;
       state.list = action.payload;
-    },
-    addMovie(state, action: PayloadAction<Movie>) {
+    });
+    builder.addCase(fetchAllMovies.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Create
+    builder.addCase(createMovie.fulfilled, (state, action) => {
       state.list.unshift(action.payload);
-    },
-    updateMovie(state, action: PayloadAction<Movie>) {
+    });
+
+    // Update
+    builder.addCase(updateMovie.fulfilled, (state, action) => {
       const index = state.list.findIndex(m => m.id === action.payload.id);
       if (index !== -1) {
         state.list[index] = action.payload;
       }
-    },
-    deleteMovie(state, action: PayloadAction<string>) {
+    });
+
+    // Delete
+    builder.addCase(deleteMovie.fulfilled, (state, action) => {
       state.list = state.list.filter(m => m.id !== action.payload);
-    },
-    setLoading(state, action: PayloadAction<boolean>) {
-      state.loading = action.payload;
-    },
-    setError(state, action: PayloadAction<string | null>) {
-      state.error = action.payload;
-    },
+    });
   },
 });
-
-export const {
-  setMovies,
-  addMovie,
-  updateMovie,
-  deleteMovie,
-  setLoading,
-  setError,
-} = moviesSlice.actions;
 
 export default moviesSlice.reducer;
