@@ -4,14 +4,16 @@ import moviesReducer from './slices/movies-slice';
 import galleryReducer from './slices/gallery-slice';
 import accessReducer from './slices/access-slice';
 import movieGalleryReducer from './slices/movie-gallery-slice';
+import starMoviesReducer from './slices/star-movie-slice';
 
 export const store = configureStore({
   reducer: {
-    stars: starsReducer,
-    movies: moviesReducer,
-    gallery: galleryReducer,
     access: accessReducer,
+    gallery: galleryReducer,
     movieGallery: movieGalleryReducer,
+    movies: moviesReducer,
+    starMovies: starMoviesReducer,
+    stars: starsReducer,
   },
 });
 

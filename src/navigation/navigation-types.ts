@@ -8,6 +8,9 @@ export type StarsStackParamList = {
   StarDetail: { star: Star };
   StarGallery: { star: Star };
   MediaViewer: { mediaList: GalleryMedia[]; initialIndex: number };
+  StarMoviePicker: { star: Star };
+  MovieDetail: { movie: Movie };
+  MovieGallery: { movie: Movie };
 };
 
 export type MoviesStackParamList = {
