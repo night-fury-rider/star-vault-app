@@ -1,0 +1,32 @@
+[
+  {
+    "stageName": "",
+    "originalName": "",
+    "countryOfOrigin": "",
+    "birthday": "",
+    "height": "",
+    "weight": "",
+    "officialWebsite": "",
+    "bio": ""
+  },
+  {
+    "stageName": "Keanu Reeves",
+    "originalName": "Keanu Charles Reeves",
+    "countryOfOrigin": "Canada",
+    "birthday": "02-Sep-1964",
+    "height": "186",
+    "weight": "88",
+    "officialWebsite": "",
+    "bio": "Canadian actor and musician known for The Matrix, John Wick, Speed, and Bill & Ted's Excellent Adventure."
+  },
+  {
+    "stageName": "Rajkummar Rao",
+    "originalName": "Raj Kumar Yadav",
+    "countryOfOrigin": "India",
+    "birthday": "31-Aug-1984",
+    "height": "170",
+    "weight": "68",
+    "officialWebsite": "",
+    "bio": "Indian actor known for acclaimed performances in Shahid, Newton, Queen, Stree, and other Hindi films."
+  }
+]
