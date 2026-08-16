@@ -192,20 +192,16 @@ Switch themes anytime from the **Settings** tab.
 
 ---
 
-## 🤝 Contributing
+## Database Inspection
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feat/your-feature`)
-3. Commit your changes (`git commit -m 'feat: add your feature'`)
-4. Push to the branch (`git push origin feat/your-feature`)
-5. Open a Pull Request
+Pull the SQLite database from the Android emulator to your desktop:
 
----
+```bash
+adb shell "run-as com.yuvrajpatil.apps.starvault cat /data/data/com.yuvrajpatil.apps.starvault/databases/starvault.db" > ~/Desktop/starvault.db
+```
 
-## 📄 License
+This will create `starvault.db` on the Desktop.
 
-This project is licensed under the MIT License.
+Open DBeaver. Press Create New Database. Select Database "SQLite". Select the `starvault.db` in the path and press the Finish Button.
 
----
-
-> Built with ❤️ using React Native
+Now we can see the current database values using DBeaver.
