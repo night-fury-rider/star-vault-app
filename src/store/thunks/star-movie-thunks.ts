@@ -1,15 +1,23 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getDBAdapter } from '../../db/db-provider';
 import { Movie } from '../../modules/movies/types/movie-types';
+import { fetchAllMovies } from './movie-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 // ─── Fetch all movies linked to a star ───────────────────────
 export const fetchStarMovies = createAsyncThunk(
   'starMovies/fetch',
-  async (starId: string, { rejectWithValue }) => {
+  async (starId: string, { rejectWithValue, dispatch, getState }) => {
     try {
       console.log('🎬 Thunk: fetchStarMovies for star:', starId);
+
+      // Hydrate movies list if empty so MovieDetail can read cast from Redux.
+      const state = getState() as any;
+      if (state.movies.list.length === 0) {
+        await dispatch(fetchAllMovies());
+      }
+
       const adapter = getDBAdapter();
       const result = await adapter.execute(
         `SELECT m.*, sm.role
@@ -45,13 +53,18 @@ export const fetchStarMovies = createAsyncThunk(
 export const addStarMovie = createAsyncThunk(
   'starMovies/add',
   async (
-    { starId, movie, role }: { starId: string; movie: Movie; role?: string },
-    { rejectWithValue },
+    {
+      starId,
+      starStageName,
+      movie,
+      role,
+    }: { starId: string; starStageName: string; movie: Movie; role?: string },
+    { rejectWithValue, dispatch },
   ) => {
     try {
       console.log('🎬 Thunk: addStarMovie', movie.id, 'for star:', starId);
       const adapter = getDBAdapter();
-      // Check if link already exists
+
       const existing = await adapter.execute(
         `SELECT id FROM StarMovie WHERE personId = ? AND movieId = ?;`,
         [starId, movie.id],
@@ -62,6 +75,11 @@ export const addStarMovie = createAsyncThunk(
           [uuidv4(), starId, movie.id, role ?? null],
         );
       }
+
+      // Re-fetch movies from DB so the cast list in Redux reflects the new
+      // StarMovie row — including through the JOIN in findCast.
+      await dispatch(fetchAllMovies());
+
       console.log('🎬 Thunk: addStarMovie done');
       return { starId, movie: { ...movie, role } };
     } catch (e: any) {
@@ -76,7 +94,7 @@ export const removeStarMovie = createAsyncThunk(
   'starMovies/remove',
   async (
     { starId, movieId }: { starId: string; movieId: string },
-    { rejectWithValue },
+    { rejectWithValue, dispatch },
   ) => {
     try {
       console.log('🎬 Thunk: removeStarMovie', movieId, 'from star:', starId);
@@ -85,6 +103,10 @@ export const removeStarMovie = createAsyncThunk(
         `DELETE FROM StarMovie WHERE personId = ? AND movieId = ?;`,
         [starId, movieId],
       );
+
+      // Re-fetch so cast removal is reflected in Redux.
+      await dispatch(fetchAllMovies());
+
       console.log('🎬 Thunk: removeStarMovie done');
       return { starId, movieId };
     } catch (e: any) {

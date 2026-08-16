@@ -148,7 +148,13 @@ const StarMoviePickerScreen = () => {
         await dispatch(removeStarMovie({ starId: star.id, movieId: movie.id }));
         showSnackbar(`"${movie.title}" removed`);
       } else {
-        await dispatch(addStarMovie({ starId: star.id, movie }));
+        await dispatch(
+          addStarMovie({
+            starId: star.id,
+            starStageName: star.stageName,
+            movie,
+          }),
+        );
         bounceCheckbox(movie.id);
         showSnackbar(`"${movie.title}" added ✓`);
       }
