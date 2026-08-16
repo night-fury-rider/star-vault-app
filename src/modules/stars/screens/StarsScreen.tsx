@@ -227,6 +227,9 @@ const StarsScreen = () => {
           }
           refreshing={loading}
           onRefresh={() => dispatch(fetchAllStars())}
+          columnWrapperStyle={
+            viewMode === 'card' ? styles.columnWrapper : undefined
+          }
         />
       </Animated.View>
 
@@ -274,6 +277,9 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 100, paddingTop: 4 },
   emptyList: { flexGrow: 1 },
   separator: { height: 4 },
+  columnWrapper: {
+    paddingHorizontal: 10, // aligns with the 16px container padding minus card margin
+  },
 });
 
 export default StarsScreen;

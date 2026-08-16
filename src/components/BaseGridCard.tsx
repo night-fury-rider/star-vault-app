@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useTheme } from '../theme';
 import { BaseItem } from './base-types';
@@ -15,6 +16,14 @@ interface Props {
   onPress: (item: BaseItem) => void;
   onDelete: (id: string) => void;
 }
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_MARGIN = 6;
+const NUM_COLUMNS = 2;
+// Fixed width: half screen minus outer padding (16 each side) minus inner margins
+const CARD_WIDTH =
+  (SCREEN_WIDTH - 32 - CARD_MARGIN * NUM_COLUMNS * 2) / NUM_COLUMNS;
+const CARD_HEIGHT = 220;
 
 const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
   const { theme } = useTheme();
@@ -50,7 +59,7 @@ const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
           <Image
             source={{ uri: item.imagePath }}
             style={styles.image}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <Text style={[styles.avatarText, { color: theme.primary }]}>
@@ -72,13 +81,13 @@ const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
   );
 };
 
-const CARD_HEIGHT = 220;
-
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
+    width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    margin: 6,
+    flexGrow: 0,
+    flexShrink: 0,
+    margin: CARD_MARGIN,
     borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
