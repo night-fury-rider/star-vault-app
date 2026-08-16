@@ -48,5 +48,29 @@
     "weight": "68",
     "officialWebsite": "",
     "bio": "Indian actor known for acclaimed performances in Shahid, Newton, Queen, Stree, and other Hindi films."
+  },
+  {
+    "title": "",
+    "year": "",
+    "genre": "",
+    "director": "",
+    "synopsis": "",
+    "cast": ""
+  },
+  {
+    "title": "Ballerina",
+    "year": "2025",
+    "genre": "Action, Thriller",
+    "director": "Len Wiseman",
+    "synopsis": "Eve Macarro, a trained ballerina and assassin, sets out to avenge the death of her father while becoming caught in the dangerous world of the Ruska Roma and its assassin traditions.",
+    "cast": "Ana de Armas, Keanu Reeves"
+  },
+  {
+    "title": "Shaadi Mein Zaroor Aana",
+    "year": "2017",
+    "genre": "Romance, Comedy, Drama",
+    "director": "Ratnaa Sinha",
+    "synopsis": "Satyendra and Aarti meet through an arranged marriage proposal and fall in love. However, an unexpected turn of events on their wedding day changes the course of their lives and relationship.",
+    "cast": "Rajkummar Rao, Kriti Kharbanda"
   }
 ]
