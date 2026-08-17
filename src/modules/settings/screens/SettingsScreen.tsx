@@ -15,7 +15,7 @@ import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { setUnlocked } from '../../../store/slices/access-slice';
 import StorageService from '../../../services/StorageService';
 
-const ENDPOINT_SECRET = 'https://cdn.starvault.io/v1/feed';
+const ENDPOINT_SECRET = 'dragon';
 const ACCESS_KEY = 'starvault_access';
 
 const THEMES: { name: ThemeName; label: string; color: string; bg: string }[] =
