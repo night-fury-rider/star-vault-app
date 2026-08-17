@@ -14,7 +14,10 @@ import { useTheme } from '../../../theme';
 import { Movie } from '../types/movie-types';
 import { MoviesStackParamList } from '../../../navigation/navigation-types';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
-import { fetchAllMovies, deleteMovie } from '../../../store/thunks/movie-thunks';
+import {
+  fetchAllMovies,
+  deleteMovie,
+} from '../../../store/thunks/movie-thunks';
 import BaseCard from '../../../components/BaseCard';
 import BaseGridCard from '../../../components/BaseGridCard';
 import BaseEmptyState from '../../../components/BaseEmptyState';
@@ -30,11 +33,15 @@ const MoviesScreen = () => {
   const dispatch = useAppDispatch();
 
   const { list: movies, loading } = useAppSelector(state => state.movies);
+  const isUnlocked = useAppSelector(state => state.access.isUnlocked);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    if (!isUnlocked) {
+      return;
+    }
     console.log('🎬 MoviesScreen mounted — fetching movies');
     dispatch(fetchAllMovies());
   }, [dispatch]);
@@ -109,6 +116,45 @@ const MoviesScreen = () => {
       onDelete={handleDelete}
     />
   );
+
+  if (!isUnlocked) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: theme.background,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: 40,
+          },
+        ]}
+      >
+        <Text style={{ fontSize: 64, marginBottom: 20 }}>🚀</Text>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: '700',
+            color: theme.text.primary,
+            marginBottom: 10,
+            textAlign: 'center',
+          }}
+        >
+          Coming Soon
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: theme.text.secondary,
+            textAlign: 'center',
+            lineHeight: 22,
+          }}
+        >
+          This feature will be available in an upcoming release.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
