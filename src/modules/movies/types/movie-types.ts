@@ -2,6 +2,7 @@ export interface MovieCast {
   id: string;
   personId: string;
   stageName: string;
+  imagePath?: string;
   role?: string;
 }
 

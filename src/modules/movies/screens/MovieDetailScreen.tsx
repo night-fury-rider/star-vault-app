@@ -223,9 +223,19 @@ const MovieDetailScreen = () => {
               <View
                 style={[styles.castAvatar, { backgroundColor: theme.card }]}
               >
-                <Text style={[styles.castAvatarText, { color: theme.primary }]}>
-                  {member.stageName.charAt(0).toUpperCase()}
-                </Text>
+                {member.imagePath ? (
+                  <Image
+                    source={{ uri: member.imagePath }}
+                    style={styles.castAvatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text
+                    style={[styles.castAvatarText, { color: theme.primary }]}
+                  >
+                    {member.stageName.charAt(0).toUpperCase()}
+                  </Text>
+                )}
               </View>
 
               <View style={styles.castInfo}>
@@ -310,6 +320,11 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
+  },
+  castAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
   },
   castAvatarText: { fontSize: 16, fontWeight: '700' },
   castCard: {

@@ -150,15 +150,16 @@ export class MovieRepository {
   // ─── PRIVATE HELPERS ──────────────────────────────────────
   private async findCast(movieId: string): Promise<MovieCast[]> {
     const result = await this.adapter.execute(
-      `SELECT sm.id, sm.personId, sm.role, p.stageName
-       FROM StarMovie sm
-       LEFT JOIN Person p ON p.id = sm.personId
-       WHERE sm.movieId = ?;`,
+      `SELECT sm.id, sm.personId, sm.role, p.stageName, p.imagePath
+        FROM StarMovie sm
+        LEFT JOIN Person p ON p.id = sm.personId
+        WHERE sm.movieId = ?;`,
       [movieId],
     );
     return result.rows.map(row => ({
       id: row.id,
       personId: row.personId,
+      imagePath: row.imagePath ?? undefined,
       stageName: row.stageName ?? 'Unknown',
       role: row.role ?? undefined,
     }));
