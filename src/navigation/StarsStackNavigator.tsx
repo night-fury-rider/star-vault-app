@@ -9,8 +9,9 @@ import StarGalleryScreen from '../modules/stars/screens/StarGalleryScreen';
 import MediaViewerScreen from '../modules/stars/screens/MediaViewerScreen';
 import StarMoviePickerScreen from '../modules/stars/screens/StarMoviePickerScreen';
 import MovieDetailScreen from '../modules/movies/screens/MovieDetailScreen';
-import MovieMediaViewerScreen from '../modules/movies/screens/MovieMediaViewerScreen';
 import MovieGalleryScreen from '../modules/movies/screens/MovieGalleryScreen';
+import MovieMediaViewerScreen from '../modules/movies/screens/MovieMediaViewerScreen';
+import MovieStarPickerScreen from '../modules/stars/screens/StarMoviePickerScreen';
 
 const Stack = createStackNavigator<StarsStackParamList>();
 
@@ -73,6 +74,11 @@ const StarsStackNavigator = () => {
         options={({ route }) => ({
           title: `${route.params.movie.title} — Gallery`,
         })}
+      />
+      <Stack.Screen
+        name="MovieStarPicker"
+        component={MovieStarPickerScreen}
+        options={{ title: 'Add Star' }}
       />
       <Stack.Screen
         name="MovieMediaViewer"

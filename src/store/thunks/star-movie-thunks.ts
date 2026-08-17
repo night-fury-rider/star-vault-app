@@ -76,8 +76,7 @@ export const addStarMovie = createAsyncThunk(
         );
       }
 
-      // Re-fetch movies from DB so the cast list in Redux reflects the new
-      // StarMovie row — including through the JOIN in findCast.
+      // Re-fetch movies from DB so the cast list in movies slice is up to date.
       await dispatch(fetchAllMovies());
 
       console.log('🎬 Thunk: addStarMovie done');
@@ -104,7 +103,7 @@ export const removeStarMovie = createAsyncThunk(
         [starId, movieId],
       );
 
-      // Re-fetch so cast removal is reflected in Redux.
+      // Re-fetch movies so the cast list in movies slice reflects the removal.
       await dispatch(fetchAllMovies());
 
       console.log('🎬 Thunk: removeStarMovie done');

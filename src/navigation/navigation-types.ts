@@ -3,7 +3,7 @@ import { Movie } from '../modules/movies/types/movie-types';
 
 export type StarsStackParamList = {
   StarsList: undefined;
-  AddStar: undefined;
+  AddStar: { star?: Star } | undefined;
   EditStar: { star: Star; onStarUpdated: (star: Star) => void };
   StarDetail: { star: Star };
   StarGallery: { star: Star };
@@ -11,6 +11,8 @@ export type StarsStackParamList = {
   StarMoviePicker: { star: Star };
   MovieDetail: { movie: Movie };
   MovieGallery: { movie: Movie };
+  MovieStarPicker: { movie: Movie };
+  MovieMediaViewer: { mediaList: GalleryMedia[]; initialIndex: number };
 };
 
 export type MoviesStackParamList = {
@@ -20,6 +22,8 @@ export type MoviesStackParamList = {
   MovieDetail: { movie: Movie };
   MovieGallery: { movie: Movie };
   MovieMediaViewer: { mediaList: GalleryMedia[]; initialIndex: number };
+  MovieStarPicker: { movie: Movie };
+  StarDetail: { star: Star };
 };
 
 export interface GalleryMedia {

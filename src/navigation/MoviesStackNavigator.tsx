@@ -7,6 +7,8 @@ import AddMovieScreen from '../modules/movies/screens/AddMovieScreen';
 import MovieDetailScreen from '../modules/movies/screens/MovieDetailScreen';
 import MovieGalleryScreen from '../modules/movies/screens/MovieGalleryScreen';
 import MovieMediaViewerScreen from '../modules/movies/screens/MovieMediaViewerScreen';
+import MovieStarPickerScreen from '../modules/movies/screens/MovieStarPickerScreen';
+import StarDetailScreen from '../modules/stars/screens/StarDetailScreen';
 
 const Stack = createStackNavigator<MoviesStackParamList>();
 
@@ -50,6 +52,16 @@ const MoviesStackNavigator = () => {
           headerShown: false,
           cardStyle: { backgroundColor: '#000000' },
         }}
+      />
+      <Stack.Screen
+        name="MovieStarPicker"
+        component={MovieStarPickerScreen}
+        options={{ title: 'Add Star' }}
+      />
+      <Stack.Screen
+        name="StarDetail"
+        component={StarDetailScreen}
+        options={{ title: '' }}
       />
     </Stack.Navigator>
   );

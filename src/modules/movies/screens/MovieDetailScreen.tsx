@@ -15,8 +15,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../../theme';
 import { MoviesStackParamList } from '../../../navigation/navigation-types';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
-import { useAppDispatch } from '../../../store/store-hooks';
+import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { deleteMovie } from '../../../store/thunks/movie-thunks';
+import { removeStarMovie } from '../../../store/thunks/star-movie-thunks';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'MovieDetail'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'MovieDetail'>;
@@ -26,7 +27,15 @@ const MovieDetailScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RoutePropType>();
-  const { movie } = route.params;
+  const { movie: routeMovie } = route.params;
+
+  // Read live from Redux so cast updates reflect immediately
+  const movie =
+    useAppSelector(state =>
+      state.movies.list.find(m => m.id === routeMovie.id),
+    ) ?? routeMovie;
+
+  const cast = movie.cast ?? [];
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -70,10 +79,35 @@ const MovieDetailScreen = () => {
     navigation.navigate('MovieGallery', { movie });
   };
 
+  const handleOpenStarPicker = () => {
+    navigation.navigate('MovieStarPicker', { movie });
+  };
+
+  const handleNavigateToStar = (personId: string, stageName: string) => {
+    // Find the full star object from Redux so StarDetail has complete data
+    navigation.navigate('StarDetail', {
+      star: { id: personId, stageName } as any,
+    });
+  };
+
+  const handleRemoveStar = (personId: string, stageName: string) => {
+    Alert.alert(
+      'Remove Star',
+      `Remove "${stageName}" from ${movie.title}'s cast?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () =>
+            dispatch(removeStarMovie({ starId: personId, movieId: movie.id })),
+        },
+      ],
+    );
+  };
+
   const renderInfoRow = (label: string, value?: string | null) => {
-    if (!value) {
-      return null;
-    }
+    if (!value) return null;
     return (
       <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
         <Text style={[styles.infoLabel, { color: theme.text.muted }]}>
@@ -108,12 +142,12 @@ const MovieDetailScreen = () => {
             </Text>
           </View>
         )}
-
-        {/* Gradient overlay */}
         <View style={styles.heroOverlay}>
           <Text style={styles.heroTitle}>{movie.title}</Text>
           <View style={styles.heroBadgeRow}>
-            <View style={[styles.badge, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+            <View
+              style={[styles.badge, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+            >
               <Text style={styles.badgeText}>📅 {movie.year}</Text>
             </View>
             {movie.genre && (
@@ -151,73 +185,95 @@ const MovieDetailScreen = () => {
           {renderInfoRow('Director', movie.director)}
         </View>
 
-        {/* Cast */}
-        {movie.cast && movie.cast.length > 0 && (
-          <>
-            <BaseSectionHeader title={`Cast (${movie.cast.length})`} />
-            <View
+        {/* ── Cast ─────────────────────────────────────── */}
+        <View style={styles.castSectionRow}>
+          <View
+            style={[
+              styles.castSectionHeader,
+              { borderBottomColor: theme.border },
+            ]}
+          >
+            <Text style={[styles.castSectionTitle, { color: theme.primary }]}>
+              CAST ({cast.length})
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.addStarBtn, { borderColor: theme.primary }]}
+            onPress={handleOpenStarPicker}
+          >
+            <Text style={[styles.addStarBtnText, { color: theme.primary }]}>
+              + Add
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {cast.length > 0 ? (
+          cast.map(member => (
+            <TouchableOpacity
+              key={member.id}
               style={[
-                styles.infoCard,
+                styles.castCard,
                 { backgroundColor: theme.surface, borderColor: theme.border },
               ]}
+              onPress={() =>
+                handleNavigateToStar(member.personId, member.stageName)
+              }
+              activeOpacity={0.75}
             >
-              {movie.cast.map(member => (
-                <View
-                  key={member.id}
-                  style={[
-                    styles.castRow,
-                    { borderBottomColor: theme.border },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.castAvatar,
-                      { backgroundColor: theme.card },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.castAvatarText, { color: theme.primary }]}
-                    >
-                      {member.stageName.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.castInfo}>
-                    <Text
-                      style={[
-                        styles.castName,
-                        { color: theme.text.primary },
-                      ]}
-                    >
-                      {member.stageName}
-                    </Text>
-                    {member.role && (
-                      <Text
-                        style={[
-                          styles.castRole,
-                          { color: theme.text.secondary },
-                        ]}
-                      >
-                        as {member.role}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+              <View
+                style={[styles.castAvatar, { backgroundColor: theme.card }]}
+              >
+                <Text style={[styles.castAvatarText, { color: theme.primary }]}>
+                  {member.stageName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
 
-        {movie.cast?.length === 0 && (
-          <>
-            <BaseSectionHeader title="Cast" />
-            <View
-              style={[styles.emptyCast, { backgroundColor: theme.card }]}
-            >
-              <Text style={[styles.emptyCastText, { color: theme.text.muted }]}>
-                🎭 No cast linked yet
-              </Text>
-            </View>
-          </>
+              <View style={styles.castInfo}>
+                <Text
+                  style={[styles.castName, { color: theme.text.primary }]}
+                  numberOfLines={1}
+                >
+                  {member.stageName}
+                </Text>
+                {member.role && (
+                  <Text style={[styles.castRole, { color: theme.text.muted }]}>
+                    as {member.role}
+                  </Text>
+                )}
+              </View>
+
+              <View style={styles.castActions}>
+                <TouchableOpacity
+                  style={styles.removeBtn}
+                  onPress={() =>
+                    handleRemoveStar(member.personId, member.stageName)
+                  }
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon
+                    name="close-circle-outline"
+                    size={20}
+                    color={theme.status.error}
+                  />
+                </TouchableOpacity>
+                <Icon
+                  name="chevron-forward"
+                  size={18}
+                  color={theme.text.muted}
+                />
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <TouchableOpacity
+            style={[styles.emptyCast, { backgroundColor: theme.card }]}
+            onPress={handleOpenStarPicker}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.emptyCastText, { color: theme.text.muted }]}>
+              🎭 Tap "+ Add" to link stars
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* Gallery Button */}
@@ -235,149 +291,118 @@ const MovieDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  heroContainer: {
-    height: 320,
-    position: 'relative',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroPlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heroInitial: {
-    fontSize: 80,
-  },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: 24,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  heroBadgeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  badge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
+  addStarBtn: {
+    alignSelf: 'flex-end',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 14,
+    paddingHorizontal: 12,
     paddingVertical: 4,
   },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+  addStarBtnText: { fontSize: 13, fontWeight: '700' },
+  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  bottomSpacing: { height: 40 },
+  castActions: { alignItems: 'center', flexDirection: 'row', gap: 6 },
+  castAvatar: {
+    alignItems: 'center',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
-  content: {
+  castAvatarText: { fontSize: 16, fontWeight: '700' },
+  castCard: {
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 10,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  castInfo: { flex: 1, marginLeft: 12, marginRight: 8 },
+  castName: { fontSize: 15, fontWeight: '600' },
+  castRole: { fontSize: 12, fontStyle: 'italic', marginTop: 2 },
+  castSectionHeader: {
+    borderBottomWidth: 2,
+    flex: 1,
+    marginRight: 10,
+    paddingBottom: 6,
+  },
+  castSectionRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  castSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  container: { flex: 1 },
+  content: { padding: 20 },
+  emptyCast: {
+    alignItems: 'center',
+    borderRadius: 12,
+    marginBottom: 16,
     padding: 20,
   },
-  synopsis: {
-    fontSize: 15,
-    lineHeight: 24,
+  emptyCastText: { fontSize: 14 },
+  galleryButton: {
+    alignItems: 'center',
+    borderRadius: 12,
     marginBottom: 20,
+    padding: 14,
+  },
+  galleryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  headerButton: { paddingHorizontal: 10, paddingVertical: 8 },
+  headerButtons: { alignItems: 'center', flexDirection: 'row' },
+  heroBadgeRow: { flexDirection: 'row', gap: 8 },
+  heroContainer: { height: 320, position: 'relative' },
+  heroImage: { height: '100%', width: '100%' },
+  heroInitial: { fontSize: 80 },
+  heroOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    bottom: 0,
+    left: 0,
+    padding: 20,
+    paddingBottom: 24,
+    position: 'absolute',
+    right: 0,
+  },
+  heroPlaceholder: {
+    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 8,
   },
   infoCard: {
     borderRadius: 12,
     borderWidth: 1,
-    overflow: 'hidden',
     marginBottom: 20,
+    overflow: 'hidden',
   },
+  infoLabel: { flex: 1, fontSize: 13, fontWeight: '600' },
   infoRow: {
+    alignItems: 'center',
+    borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
   },
-  infoLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    flex: 1,
-  },
-  infoValue: {
-    fontSize: 14,
-    flex: 2,
-    textAlign: 'right',
-  },
-  castRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  castAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  castAvatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  castInfo: {
-    flex: 1,
-  },
-  castName: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  castRole: {
-    fontSize: 13,
-    fontStyle: 'italic',
-  },
-  emptyCast: {
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emptyCastText: {
-    fontSize: 14,
-  },
-  galleryButton: {
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  galleryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  bottomSpacing: {
-    height: 40,
-  },
+  infoValue: { flex: 2, fontSize: 14, textAlign: 'right' },
+  removeBtn: { padding: 2 },
+  synopsis: { fontSize: 15, lineHeight: 24, marginBottom: 20 },
 });
 
 export default MovieDetailScreen;
