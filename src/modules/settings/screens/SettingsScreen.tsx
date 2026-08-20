@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { setUnlocked } from '../../../store/slices/access-slice';
 import StorageService from '../../../services/StorageService';
 import { ExportService } from '../../../services/ExportService';
+import { ImportService } from '../../../services/ImportService';
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 
@@ -44,6 +45,7 @@ const SettingsScreen = () => {
   const [endpointValue, setEndpointValue] = useState('');
   const [endpointStatus, setEndpointStatus] = useState<EndpointStatus>('idle');
   const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const handleApplyEndpoint = () => {
@@ -143,6 +145,81 @@ const SettingsScreen = () => {
     }
   };
 
+  const handleImport = async () => {
+    try {
+      setImporting(true);
+
+      // Step 1: Pick file
+      let localUri: string;
+      try {
+        localUri = await ImportService.pickFile();
+      } catch (e: any) {
+        // User cancelled picker — not an error
+        if (
+          e?.code === 'DOCUMENT_PICKER_CANCELED' ||
+          e?.message?.includes('cancel')
+        ) {
+          return;
+        }
+        throw e;
+      }
+
+      // Step 2: Read and validate
+      const data = await ImportService.readAndValidate(localUri);
+
+      // Step 3: Confirm with summary
+      const { tables } = data;
+      Alert.alert(
+        'Import Data',
+        `Found:\n\n• ${tables.Person.length} star${
+          tables.Person.length !== 1 ? 's' : ''
+        }\n• ${tables.Movie.length} movie${
+          tables.Movie.length !== 1 ? 's' : ''
+        }\n• ${tables.StarMovie.length} star-movie link${
+          tables.StarMovie.length !== 1 ? 's' : ''
+        }\n\nExisting records with matching IDs will be updated. New records will be added.`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => setImporting(false),
+          },
+          {
+            text: 'Import',
+            onPress: async () => {
+              try {
+                const result = await ImportService.importAll(data);
+                await Promise.all([
+                  dispatch(fetchAllStars()),
+                  dispatch(fetchAllMovies()),
+                ]);
+                Alert.alert(
+                  'Import Complete',
+                  `Imported:\n\n• ${result.stars} star${
+                    result.stars !== 1 ? 's' : ''
+                  }\n• ${result.movies} movie${
+                    result.movies !== 1 ? 's' : ''
+                  }\n• ${result.links} link${result.links !== 1 ? 's' : ''}`,
+                );
+              } catch (e: any) {
+                Alert.alert(
+                  'Import Failed',
+                  e?.message ?? 'Something went wrong.',
+                );
+              } finally {
+                setImporting(false);
+              }
+            },
+          },
+        ],
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not read file.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleDeleteAll = () => {
     Alert.alert(
       'Delete All Data',
@@ -156,7 +233,6 @@ const SettingsScreen = () => {
             try {
               setDeleting(true);
               await ExportService.deleteAll();
-              // Refresh Redux so UI clears immediately
               await Promise.all([
                 dispatch(fetchAllStars()),
                 dispatch(fetchAllMovies()),
@@ -173,18 +249,18 @@ const SettingsScreen = () => {
     );
   };
 
+  const isBusy = exporting || importing || deleting;
+
   const statusLabel: Record<EndpointStatus, string> = {
     idle: 'Not configured',
     connected: 'Connected',
     unreachable: 'Unreachable',
   };
-
   const statusColor: Record<EndpointStatus, string> = {
     idle: theme.text.muted,
     connected: theme.status.success,
     unreachable: theme.status.error,
   };
-
   const statusDot: Record<EndpointStatus, string> = {
     idle: '○',
     connected: '●',
@@ -250,7 +326,6 @@ const SettingsScreen = () => {
           >
             MODE
           </Text>
-
           <View
             style={[
               styles.card,
@@ -282,7 +357,6 @@ const SettingsScreen = () => {
                 </Text>
               </View>
             </View>
-
             <TouchableOpacity
               style={[styles.switchBtn, { borderColor: theme.status.error }]}
               onPress={handleSwitchToPublic}
@@ -308,7 +382,6 @@ const SettingsScreen = () => {
           >
             DATA
           </Text>
-
           <View
             style={[
               styles.card,
@@ -333,7 +406,7 @@ const SettingsScreen = () => {
                 },
               ]}
               onPress={handleExport}
-              disabled={exporting || deleting}
+              disabled={isBusy}
             >
               {exporting ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
@@ -342,7 +415,35 @@ const SettingsScreen = () => {
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+            {/* Import */}
+            <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+              Import Data
+            </Text>
+            <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+              Import a StarVault JSON export. Existing records with matching IDs
+              will be updated; new records will be added.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.actionFullBtn,
+                {
+                  backgroundColor: importing
+                    ? theme.primaryLight
+                    : theme.primary,
+                },
+              ]}
+              onPress={handleImport}
+              disabled={isBusy}
+            >
+              {importing ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.actionFullBtnText}>⬇ Import JSON</Text>
+              )}
+            </TouchableOpacity>
+
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
             {/* Delete */}
@@ -363,7 +464,7 @@ const SettingsScreen = () => {
                 },
               ]}
               onPress={handleDeleteAll}
-              disabled={exporting || deleting}
+              disabled={isBusy}
             >
               {deleting ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
@@ -386,7 +487,6 @@ const SettingsScreen = () => {
           >
             DEVELOPER
           </Text>
-
           <View
             style={[
               styles.card,
@@ -400,7 +500,6 @@ const SettingsScreen = () => {
               Base URL used to resolve media assets and catalogue feeds. Contact
               support to obtain your organisation's endpoint.
             </Text>
-
             <TextInput
               style={[
                 styles.endpointInput,
@@ -426,7 +525,6 @@ const SettingsScreen = () => {
               returnKeyType="done"
               onSubmitEditing={handleApplyEndpoint}
             />
-
             <View style={styles.statusRow}>
               <View style={styles.statusLeft}>
                 <Text
@@ -446,7 +544,6 @@ const SettingsScreen = () => {
                   {statusLabel[endpointStatus]}
                 </Text>
               </View>
-
               <View style={styles.actionButtons}>
                 {endpointStatus === 'connected' && (
                   <TouchableOpacity
@@ -478,7 +575,6 @@ const SettingsScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
-
             <Text style={[styles.versionNote, { color: theme.text.muted }]}>
               API version: v1 · Build a3f9c12
             </Text>
