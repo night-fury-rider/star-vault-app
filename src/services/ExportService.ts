@@ -1,9 +1,6 @@
 import { Share } from 'react-native';
 import { getDBAdapter } from '../db/db-provider';
 
-// ─── Export shape ─────────────────────────────────────────────
-// Every table is exported as a flat array of row objects.
-// On import, these arrays are inserted back in dependency order.
 export interface StarVaultExport {
   version: 1;
   exportedAt: string;
@@ -51,21 +48,21 @@ export const ExportService = {
     };
 
     const json = JSON.stringify(payload, null, 2);
-    const filename = `starvault-export-${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = `starvault-export-${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
 
     await Share.share(
-      {
-        title: filename,
-        message: json,
-      },
-      {
-        dialogTitle: 'Export StarVault Data',
-      },
+      { title: filename, message: json },
+      { dialogTitle: 'Export StarVault Data' },
     );
   },
 
-  // ─── Summary for the user before exporting ───────────────
-  async getSummary(): Promise<{ stars: number; movies: number; links: number }> {
+  async getSummary(): Promise<{
+    stars: number;
+    movies: number;
+    links: number;
+  }> {
     const adapter = getDBAdapter();
     const [stars, movies, links] = await Promise.all([
       adapter.execute('SELECT COUNT(*) as count FROM Person;'),
@@ -77,5 +74,17 @@ export const ExportService = {
       movies: movies.rows[0]?.count ?? 0,
       links: links.rows[0]?.count ?? 0,
     };
+  },
+
+  // Deletes all rows from all tables. Schema is preserved.
+  async deleteAll(): Promise<void> {
+    const adapter = getDBAdapter();
+    // Order matters — child tables first to avoid FK constraint errors
+    await adapter.execute('DELETE FROM StarMovie;');
+    await adapter.execute('DELETE FROM MovieImage;');
+    await adapter.execute('DELETE FROM StarImage;');
+    await adapter.execute('DELETE FROM CustomAttribute;');
+    await adapter.execute('DELETE FROM Movie;');
+    await adapter.execute('DELETE FROM Person;');
   },
 };

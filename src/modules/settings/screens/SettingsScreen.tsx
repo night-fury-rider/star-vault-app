@@ -16,6 +16,8 @@ import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { setUnlocked } from '../../../store/slices/access-slice';
 import StorageService from '../../../services/StorageService';
 import { ExportService } from '../../../services/ExportService';
+import { fetchAllStars } from '../../../store/thunks/star-thunks';
+import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 
 const ENDPOINT_SECRET = 'https://cdn.starvault.io/v1/feed';
 const ACCESS_KEY = 'starvault_access';
@@ -42,6 +44,7 @@ const SettingsScreen = () => {
   const [endpointValue, setEndpointValue] = useState('');
   const [endpointStatus, setEndpointStatus] = useState<EndpointStatus>('idle');
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleApplyEndpoint = () => {
     const trimmed = endpointValue.trim();
@@ -110,7 +113,7 @@ const SettingsScreen = () => {
           summary.links
         } star-movie link${
           summary.links !== 1 ? 's' : ''
-        }\n\nNote: Media files (images/videos) are not included, only metadata.`,
+        }\n\nNote: Media files are not included.`,
         [
           {
             text: 'Cancel',
@@ -138,6 +141,36 @@ const SettingsScreen = () => {
       Alert.alert('Error', e?.message ?? 'Could not prepare export.');
       setExporting(false);
     }
+  };
+
+  const handleDeleteAll = () => {
+    Alert.alert(
+      'Delete All Data',
+      'This will permanently delete all stars, movies, and their links. This cannot be undone.\n\nExport your data first if you want to restore it later.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await ExportService.deleteAll();
+              // Refresh Redux so UI clears immediately
+              await Promise.all([
+                dispatch(fetchAllStars()),
+                dispatch(fetchAllMovies()),
+              ]);
+              Alert.alert('Done', 'All data has been deleted.');
+            } catch (e: any) {
+              Alert.alert('Error', e?.message ?? 'Could not delete data.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const statusLabel: Record<EndpointStatus, string> = {
@@ -282,6 +315,7 @@ const SettingsScreen = () => {
               { backgroundColor: theme.surface, borderColor: theme.border },
             ]}
           >
+            {/* Export */}
             <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
               Export Data
             </Text>
@@ -289,10 +323,9 @@ const SettingsScreen = () => {
               Export all stars, movies, and their links as a JSON file. Media
               files are not included.
             </Text>
-
             <TouchableOpacity
               style={[
-                styles.exportBtn,
+                styles.actionFullBtn,
                 {
                   backgroundColor: exporting
                     ? theme.primaryLight
@@ -300,12 +333,42 @@ const SettingsScreen = () => {
                 },
               ]}
               onPress={handleExport}
-              disabled={exporting}
+              disabled={exporting || deleting}
             >
               {exporting ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={styles.exportBtnText}>⬆ Export JSON</Text>
+                <Text style={styles.actionFullBtnText}>⬆ Export JSON</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+            {/* Delete */}
+            <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+              Delete All Data
+            </Text>
+            <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+              Permanently removes all stars, movies, and links. Export first if
+              you want to restore later.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.actionFullBtn,
+                {
+                  backgroundColor: deleting
+                    ? theme.status.error + '88'
+                    : theme.status.error,
+                },
+              ]}
+              onPress={handleDeleteAll}
+              disabled={exporting || deleting}
+            >
+              {deleting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.actionFullBtnText}>🗑 Delete All Data</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -450,6 +513,12 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { fontSize: 13, fontWeight: '600' },
   actionButtons: { flexDirection: 'row', gap: 8 },
+  actionFullBtn: {
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  actionFullBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   card: { borderRadius: 12, borderWidth: 1, marginBottom: 0, padding: 16 },
   checkmark: {
     alignItems: 'center',
@@ -462,10 +531,11 @@ const styles = StyleSheet.create({
   colorDot: { borderRadius: 16, height: 32, marginRight: 14, width: 32 },
   container: { flex: 1 },
   content: { padding: 20 },
-  dataDesc: { fontSize: 12, lineHeight: 18, marginBottom: 14 },
+  dataDesc: { fontSize: 12, lineHeight: 18, marginBottom: 10 },
   dataLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
   devDesc: { fontSize: 12, lineHeight: 18, marginBottom: 12 },
   devLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  divider: { height: 1, marginVertical: 16 },
   endpointInput: {
     borderRadius: 8,
     borderWidth: 1,
@@ -475,12 +545,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  exportBtn: {
-    alignItems: 'center',
-    borderRadius: 10,
-    paddingVertical: 12,
-  },
-  exportBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   infoBox: { borderRadius: 10, borderWidth: 1, marginTop: 24, padding: 14 },
   infoText: { fontSize: 14, textAlign: 'center' },
   infoValue: { fontWeight: '700' },
