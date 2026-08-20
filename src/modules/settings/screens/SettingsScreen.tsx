@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../../theme';
 import { ThemeName } from '../../../theme';
@@ -14,8 +15,9 @@ import { Typography } from '../../../theme';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { setUnlocked } from '../../../store/slices/access-slice';
 import StorageService from '../../../services/StorageService';
+import { ExportService } from '../../../services/ExportService';
 
-const ENDPOINT_SECRET = 'dragon';
+const ENDPOINT_SECRET = 'https://cdn.starvault.io/v1/feed';
 const ACCESS_KEY = 'starvault_access';
 
 const THEMES: { name: ThemeName; label: string; color: string; bg: string }[] =
@@ -39,6 +41,7 @@ const SettingsScreen = () => {
 
   const [endpointValue, setEndpointValue] = useState('');
   const [endpointStatus, setEndpointStatus] = useState<EndpointStatus>('idle');
+  const [exporting, setExporting] = useState(false);
 
   const handleApplyEndpoint = () => {
     const trimmed = endpointValue.trim();
@@ -93,6 +96,48 @@ const SettingsScreen = () => {
         },
       ],
     );
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const summary = await ExportService.getSummary();
+      Alert.alert(
+        'Export Data',
+        `This will export:\n\n• ${summary.stars} star${
+          summary.stars !== 1 ? 's' : ''
+        }\n• ${summary.movies} movie${summary.movies !== 1 ? 's' : ''}\n• ${
+          summary.links
+        } star-movie link${
+          summary.links !== 1 ? 's' : ''
+        }\n\nNote: Media files (images/videos) are not included, only metadata.`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => setExporting(false),
+          },
+          {
+            text: 'Export',
+            onPress: async () => {
+              try {
+                await ExportService.exportAll();
+              } catch (e: any) {
+                Alert.alert(
+                  'Export Failed',
+                  e?.message ?? 'Something went wrong.',
+                );
+              } finally {
+                setExporting(false);
+              }
+            },
+          },
+        ],
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not prepare export.');
+      setExporting(false);
+    }
   };
 
   const statusLabel: Record<EndpointStatus, string> = {
@@ -161,7 +206,7 @@ const SettingsScreen = () => {
         })}
       </View>
 
-      {/* ── MODE ─────────────────────────────────────── */}
+      {/* ── MODE — Private Mode only ─────────────────── */}
       {isUnlocked && (
         <>
           <Text
@@ -175,65 +220,99 @@ const SettingsScreen = () => {
 
           <View
             style={[
-              styles.modeCard,
+              styles.card,
               { backgroundColor: theme.surface, borderColor: theme.border },
             ]}
           >
-            {/* Current mode indicator */}
             <View style={styles.modeRow}>
               <View style={styles.modeInfo}>
                 <Text style={[styles.modeLabel, { color: theme.text.primary }]}>
-                  {isUnlocked ? '🔓 Private Mode' : '🔒 Public Mode'}
+                  🔓 Private Mode
                 </Text>
                 <Text style={[styles.modeDesc, { color: theme.text.muted }]}>
-                  {isUnlocked
-                    ? 'All features are available.'
-                    : 'Showing public view only.'}
+                  All features are available.
                 </Text>
               </View>
               <View
                 style={[
                   styles.modeBadge,
-                  {
-                    backgroundColor: isUnlocked
-                      ? theme.status.success + '22'
-                      : theme.status.warning + '22',
-                  },
+                  { backgroundColor: theme.status.success + '22' },
                 ]}
               >
                 <Text
                   style={[
                     styles.modeBadgeText,
-                    {
-                      color: isUnlocked
-                        ? theme.status.success
-                        : theme.status.warning,
-                    },
+                    { color: theme.status.success },
                   ]}
                 >
-                  {isUnlocked ? 'Private' : 'Public'}
+                  Private
                 </Text>
               </View>
             </View>
 
-            {/* Switch to Public — only shown in Private mode */}
-            {isUnlocked && (
-              <TouchableOpacity
-                style={[styles.switchBtn, { borderColor: theme.status.error }]}
-                onPress={handleSwitchToPublic}
+            <TouchableOpacity
+              style={[styles.switchBtn, { borderColor: theme.status.error }]}
+              onPress={handleSwitchToPublic}
+            >
+              <Text
+                style={[styles.switchBtnText, { color: theme.status.error }]}
               >
-                <Text
-                  style={[styles.switchBtnText, { color: theme.status.error }]}
-                >
-                  Switch to Public Mode
-                </Text>
-              </TouchableOpacity>
-            )}
+                Switch to Public Mode
+              </Text>
+            </TouchableOpacity>
           </View>
         </>
       )}
 
-      {/* ── DEVELOPER — only in Public Mode ──────────── */}
+      {/* ── DATA — Private Mode only ──────────────────── */}
+      {isUnlocked && (
+        <>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: theme.text.secondary, marginTop: 28 },
+            ]}
+          >
+            DATA
+          </Text>
+
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+            ]}
+          >
+            <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+              Export Data
+            </Text>
+            <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+              Export all stars, movies, and their links as a JSON file. Media
+              files are not included.
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.exportBtn,
+                {
+                  backgroundColor: exporting
+                    ? theme.primaryLight
+                    : theme.primary,
+                },
+              ]}
+              onPress={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.exportBtnText}>⬆ Export JSON</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      {/* ── DEVELOPER — Public Mode only ─────────────── */}
       {!isUnlocked && (
         <>
           <Text
@@ -247,7 +326,7 @@ const SettingsScreen = () => {
 
           <View
             style={[
-              styles.devCard,
+              styles.card,
               { backgroundColor: theme.surface, borderColor: theme.border },
             ]}
           >
@@ -371,6 +450,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { fontSize: 13, fontWeight: '600' },
   actionButtons: { flexDirection: 'row', gap: 8 },
+  card: { borderRadius: 12, borderWidth: 1, marginBottom: 0, padding: 16 },
   checkmark: {
     alignItems: 'center',
     borderRadius: 12,
@@ -382,7 +462,8 @@ const styles = StyleSheet.create({
   colorDot: { borderRadius: 16, height: 32, marginRight: 14, width: 32 },
   container: { flex: 1 },
   content: { padding: 20 },
-  devCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
+  dataDesc: { fontSize: 12, lineHeight: 18, marginBottom: 14 },
+  dataLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
   devDesc: { fontSize: 12, lineHeight: 18, marginBottom: 12 },
   devLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
   endpointInput: {
@@ -394,16 +475,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  exportBtn: {
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  exportBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   infoBox: { borderRadius: 10, borderWidth: 1, marginTop: 24, padding: 14 },
   infoText: { fontSize: 14, textAlign: 'center' },
   infoValue: { fontWeight: '700' },
-  modeBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
+  modeBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   modeBadgeText: { fontSize: 12, fontWeight: '700' },
-  modeCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
   modeDesc: { fontSize: 12, marginTop: 2 },
   modeInfo: { flex: 1 },
   modeLabel: { fontSize: 15, fontWeight: '700' },
