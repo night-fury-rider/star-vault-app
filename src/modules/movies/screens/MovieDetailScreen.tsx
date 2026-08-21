@@ -54,7 +54,7 @@ const MovieDetailScreen = () => {
   }, [navigation, movie, theme]);
 
   const handleEdit = () => {
-    Alert.alert('Edit Movie', 'Edit screen coming soon!');
+    navigation.navigate('AddMovie', { movie });
   };
 
   const handleDelete = () => {

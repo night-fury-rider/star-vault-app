@@ -17,8 +17,7 @@ export type StarsStackParamList = {
 
 export type MoviesStackParamList = {
   MoviesList: undefined;
-  AddMovie: undefined;
-  EditMovie: { movie: Movie };
+  AddMovie: { movie?: Movie } | undefined;
   MovieDetail: { movie: Movie };
   MovieGallery: { movie: Movie };
   MovieMediaViewer: { mediaList: GalleryMedia[]; initialIndex: number };

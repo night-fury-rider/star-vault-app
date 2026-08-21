@@ -33,7 +33,9 @@ const MoviesStackNavigator = () => {
       <Stack.Screen
         name="AddMovie"
         component={AddMovieScreen}
-        options={{ title: 'Add Movie' }}
+        options={({ route }) => ({
+          title: route.params?.movie ? 'Edit Movie' : 'Add Movie',
+        })}
       />
       <Stack.Screen
         name="MovieDetail"

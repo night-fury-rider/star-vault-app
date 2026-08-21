@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { useTheme } from '../../../theme';
@@ -18,25 +18,33 @@ import { Movie } from '../types/movie-types';
 import BaseInput from '../../../components/BaseInput';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch } from '../../../store/store-hooks';
-import { createMovie } from '../../../store/thunks/movie-thunks';
+import { createMovie, updateMovie } from '../../../store/thunks/movie-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'AddMovie'>;
+type RoutePropType = RouteProp<MoviesStackParamList, 'AddMovie'>;
 
 const CURRENT_YEAR = new Date().getFullYear();
 
 const AddMovieScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavProp>();
+  const route = useRoute<RoutePropType>();
   const dispatch = useAppDispatch();
 
-  const [title, setTitle] = useState('');
-  const [year, setYear] = useState('');
-  const [genre, setGenre] = useState('');
-  const [director, setDirector] = useState('');
-  const [synopsis, setSynopsis] = useState('');
-  const [imagePath, setImagePath] = useState<string | undefined>();
+  // ─── Edit mode detection ──────────────────────────────────
+  const existingMovie = route.params?.movie;
+  const isEditMode = !!existingMovie;
+
+  const [title, setTitle] = useState(existingMovie?.title ?? '');
+  const [year, setYear] = useState(existingMovie?.year?.toString() ?? '');
+  const [genre, setGenre] = useState(existingMovie?.genre ?? '');
+  const [director, setDirector] = useState(existingMovie?.director ?? '');
+  const [synopsis, setSynopsis] = useState(existingMovie?.synopsis ?? '');
+  const [imagePath, setImagePath] = useState<string | undefined>(
+    existingMovie?.imagePath,
+  );
 
   const [errors, setErrors] = useState<{
     title?: string;
@@ -92,29 +100,62 @@ const AddMovieScreen = () => {
     }
     setSaving(true);
     try {
-      const newMovie: Movie = {
-        id: uuidv4(),
-        title: title.trim(),
-        year: parseInt(year, 10),
-        genre: genre.trim() || undefined,
-        director: director.trim() || undefined,
-        synopsis: synopsis.trim() || undefined,
-        imagePath: imagePath || undefined,
-        cast: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      if (isEditMode) {
+        // ─── UPDATE ───────────────────────────────────────
+        const updated: Movie = {
+          ...existingMovie!,
+          title: title.trim(),
+          year: parseInt(year, 10),
+          genre: genre.trim() || undefined,
+          director: director.trim() || undefined,
+          synopsis: synopsis.trim() || undefined,
+          imagePath: imagePath || undefined,
+          updatedAt: new Date().toISOString(),
+        };
 
-      console.log('🎬 Dispatching createMovie...');
-      const result = await dispatch(createMovie(newMovie));
+        console.log('✏️ Dispatching updateMovie...');
+        const result = await dispatch(updateMovie(updated));
 
-      if (createMovie.rejected.match(result)) {
-        console.error('❌ createMovie was rejected:', result.payload);
-        Alert.alert('Error', String(result.payload) ?? 'Failed to save movie');
-        return;
+        if (updateMovie.rejected.match(result)) {
+          console.error('❌ updateMovie was rejected:', result.payload);
+          Alert.alert(
+            'Error',
+            String(result.payload) ?? 'Failed to update movie',
+          );
+          return;
+        }
+
+        console.log('✅ Movie updated successfully, going back');
+      } else {
+        // ─── CREATE ───────────────────────────────────────
+        const newMovie: Movie = {
+          id: uuidv4(),
+          title: title.trim(),
+          year: parseInt(year, 10),
+          genre: genre.trim() || undefined,
+          director: director.trim() || undefined,
+          synopsis: synopsis.trim() || undefined,
+          imagePath: imagePath || undefined,
+          cast: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        console.log('🎬 Dispatching createMovie...');
+        const result = await dispatch(createMovie(newMovie));
+
+        if (createMovie.rejected.match(result)) {
+          console.error('❌ createMovie was rejected:', result.payload);
+          Alert.alert(
+            'Error',
+            String(result.payload) ?? 'Failed to save movie',
+          );
+          return;
+        }
+
+        console.log('✅ Movie saved successfully, going back');
       }
 
-      console.log('✅ Movie saved successfully, going back');
       navigation.goBack();
     } catch (e: any) {
       console.error('❌ handleSave caught error:', e);
@@ -225,7 +266,9 @@ const AddMovieScreen = () => {
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Movie</Text>
+            <Text style={styles.saveButtonText}>
+              {isEditMode ? 'Update Movie' : 'Save Movie'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
