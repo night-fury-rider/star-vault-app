@@ -41,6 +41,7 @@ const SettingsScreen = () => {
   const { theme, themeName, setTheme } = useTheme();
   const dispatch = useAppDispatch();
   const isUnlocked = useAppSelector(state => state.access.isUnlocked);
+  const currentSpace = isUnlocked ? 'private' : 'public';
 
   const [endpointValue, setEndpointValue] = useState('');
   const [endpointStatus, setEndpointStatus] = useState<EndpointStatus>('idle');
@@ -85,12 +86,12 @@ const SettingsScreen = () => {
 
   const handleSwitchToPublic = () => {
     Alert.alert(
-      'Switch to Public Mode',
-      'This will hide all content and show the public view. You can switch back from Settings.',
+      'Lock This Device',
+      'This will hide private content. You can unlock it again from Settings.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Switch',
+          text: 'Lock',
           style: 'destructive',
           onPress: () => {
             dispatch(setUnlocked(false));
@@ -106,7 +107,7 @@ const SettingsScreen = () => {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const summary = await ExportService.getSummary();
+      const summary = await ExportService.getSummary(currentSpace);
       Alert.alert(
         'Export Data',
         `This will export:\n\n• ${summary.stars} star${
@@ -126,7 +127,7 @@ const SettingsScreen = () => {
             text: 'Export',
             onPress: async () => {
               try {
-                await ExportService.exportAll();
+                await ExportService.exportAll(currentSpace);
               } catch (e: any) {
                 Alert.alert(
                   'Export Failed',
@@ -188,10 +189,13 @@ const SettingsScreen = () => {
             text: 'Import',
             onPress: async () => {
               try {
-                const result = await ImportService.importAll(data);
+                const result = await ImportService.importAll(
+                  data,
+                  currentSpace,
+                );
                 await Promise.all([
-                  dispatch(fetchAllStars(isUnlocked ? 'private' : 'public')),
-                  dispatch(fetchAllMovies(isUnlocked ? 'private' : 'public')),
+                  dispatch(fetchAllStars(currentSpace)),
+                  dispatch(fetchAllMovies(currentSpace)),
                 ]);
                 Alert.alert(
                   'Import Complete',
@@ -222,8 +226,14 @@ const SettingsScreen = () => {
 
   const handleDeleteAll = () => {
     Alert.alert(
-      'Delete All Data',
-      'This will permanently delete all stars, movies, and their links. This cannot be undone.\n\nExport your data first if you want to restore it later.',
+      isUnlocked ? 'Delete All Private Data' : 'Delete All Data',
+      `This will permanently delete all stars, movies, and links${
+        isUnlocked ? ' in Private Mode' : ''
+      }. This cannot be undone.${
+        isUnlocked
+          ? '\n\nExport your data first if you want to restore it later.'
+          : ''
+      }`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -232,10 +242,10 @@ const SettingsScreen = () => {
           onPress: async () => {
             try {
               setDeleting(true);
-              await ExportService.deleteAll();
+              await ExportService.deleteAll(currentSpace);
               await Promise.all([
-                dispatch(fetchAllStars(isUnlocked ? 'private' : 'public')),
-                dispatch(fetchAllMovies(isUnlocked ? 'private' : 'public')),
+                dispatch(fetchAllStars(currentSpace)),
+                dispatch(fetchAllMovies(currentSpace)),
               ]);
               Alert.alert('Done', 'All data has been deleted.');
             } catch (e: any) {
@@ -364,14 +374,14 @@ const SettingsScreen = () => {
               <Text
                 style={[styles.switchBtnText, { color: theme.status.error }]}
               >
-                Switch to Public Mode
+                Lock This Device
               </Text>
             </TouchableOpacity>
           </View>
         </>
       )}
 
-      {/* ── DATA — Private Mode only ──────────────────── */}
+      {/* ── DATA (Export/Import) — Private Mode only ──── */}
       {isUnlocked && (
         <>
           <Text
@@ -443,40 +453,53 @@ const SettingsScreen = () => {
                 <Text style={styles.actionFullBtnText}>⬇ Import JSON</Text>
               )}
             </TouchableOpacity>
-
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-            {/* Delete */}
-            <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-              Delete All Data
-            </Text>
-            <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-              Permanently removes all stars, movies, and links. Export first if
-              you want to restore later.
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.actionFullBtn,
-                {
-                  backgroundColor: deleting
-                    ? theme.status.error + '88'
-                    : theme.status.error,
-                },
-              ]}
-              onPress={handleDeleteAll}
-              disabled={isBusy}
-            >
-              {deleting ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.actionFullBtnText}>🗑 Delete All Data</Text>
-              )}
-            </TouchableOpacity>
           </View>
         </>
       )}
 
-      {/* ── DEVELOPER — Public Mode only ─────────────── */}
+      {/* ── DELETE — available in both modes ──────────── */}
+      <Text
+        style={[
+          styles.sectionTitle,
+          { color: theme.text.secondary, marginTop: 28 },
+        ]}
+      >
+        {isUnlocked ? 'DANGER ZONE' : 'RESET'}
+      </Text>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+          Delete All {isUnlocked ? 'Private ' : ''}Data
+        </Text>
+        <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+          Permanently removes all stars, movies, and links.
+          {isUnlocked ? ' Export first if you want to restore later.' : ''}
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.actionFullBtn,
+            {
+              backgroundColor: deleting
+                ? theme.status.error + '88'
+                : theme.status.error,
+            },
+          ]}
+          onPress={handleDeleteAll}
+          disabled={isBusy}
+        >
+          {deleting ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.actionFullBtnText}>🗑 Delete All Data</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* ── DEVELOPER — Locked state only ────────────── */}
       {!isUnlocked && (
         <>
           <Text
