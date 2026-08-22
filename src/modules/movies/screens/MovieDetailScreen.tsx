@@ -100,7 +100,13 @@ const MovieDetailScreen = () => {
           text: 'Remove',
           style: 'destructive',
           onPress: () =>
-            dispatch(removeStarMovie({ starId: personId, movieId: movie.id })),
+            dispatch(
+              removeStarMovie({
+                starId: personId,
+                movieId: movie.id,
+                space: movie.space,
+              }),
+            ),
         },
       ],
     );

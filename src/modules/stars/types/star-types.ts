@@ -4,6 +4,8 @@ export interface CustomAttribute {
   value: string;
 }
 
+export type Space = 'public' | 'private';
+
 export interface Star {
   id: string;
   stageName: string;
@@ -16,6 +18,7 @@ export interface Star {
   bio?: string;
   imagePath?: string;
   customAttributes?: CustomAttribute[];
+  space: Space;
   createdAt: string;
   updatedAt: string;
   userId?: string;

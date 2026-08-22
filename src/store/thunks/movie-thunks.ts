@@ -1,13 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { MovieService } from '../../modules/movies/services/MovieService';
 import { Movie } from '../../modules/movies/types/movie-types';
+import { Space } from '../../modules/stars/types/star-types';
 
 export const fetchAllMovies = createAsyncThunk(
   'movies/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (space: Space, { rejectWithValue }) => {
     try {
-      console.log('🎬 Thunk: fetchAllMovies start');
-      const movies = await MovieService.getAllMovies();
+      console.log('🎬 Thunk: fetchAllMovies start:', space);
+      const movies = await MovieService.getAllMovies(space);
       console.log('🎬 Thunk: fetchAllMovies result:', movies.length);
       return movies;
     } catch (e: any) {

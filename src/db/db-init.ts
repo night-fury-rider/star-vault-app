@@ -1,5 +1,19 @@
 import { DBAdapter } from './adapter/db-adapter';
 
+export const ensureSpaceColumn = async (
+  adapter: DBAdapter,
+  table: 'Person' | 'Movie',
+): Promise<void> => {
+  const info = await adapter.execute(`PRAGMA table_info(${table});`);
+  const hasSpace = info.rows.some((r: any) => r.name === 'space');
+  if (!hasSpace) {
+    console.log(`🏗 Adding space column to ${table}...`);
+    await adapter.execute(
+      `ALTER TABLE ${table} ADD COLUMN space TEXT NOT NULL DEFAULT 'private';`,
+    );
+  }
+};
+
 export const createTables = async (adapter: DBAdapter): Promise<void> => {
   try {
     console.log('🏗 Creating tables...');
@@ -17,6 +31,7 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
         officialWebsite TEXT,
         bio TEXT,
         imagePath TEXT,
+        space TEXT NOT NULL DEFAULT 'private',
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       );
@@ -52,6 +67,7 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
         director TEXT,
         synopsis TEXT,
         imagePath TEXT,
+        space TEXT NOT NULL DEFAULT 'private',
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       );
@@ -78,6 +94,11 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
         FOREIGN KEY (movieId) REFERENCES Movie(id) ON DELETE CASCADE
       );
     `);
+
+    // Additive migration for devices that already have Person/Movie tables
+    // without the space column.
+    await ensureSpaceColumn(adapter, 'Person');
+    await ensureSpaceColumn(adapter, 'Movie');
 
     console.log('✅ All tables created');
     const tables = await adapter.execute(

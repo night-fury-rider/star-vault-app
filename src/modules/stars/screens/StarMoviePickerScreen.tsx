@@ -145,7 +145,13 @@ const StarMoviePickerScreen = () => {
     const wasLinked = isLinked(movie.id);
     try {
       if (wasLinked) {
-        await dispatch(removeStarMovie({ starId: star.id, movieId: movie.id }));
+        await dispatch(
+          removeStarMovie({
+            starId: star.id,
+            movieId: movie.id,
+            space: star.space,
+          }),
+        );
         showSnackbar(`"${movie.title}" removed`);
       } else {
         await dispatch(
@@ -169,6 +175,7 @@ const StarMoviePickerScreen = () => {
   };
 
   const filteredMovies = allMovies.filter(movie => {
+    if (movie.space !== star.space) return false;
     const q = searchQuery.toLowerCase();
     return (
       movie.title.toLowerCase().includes(q) ||

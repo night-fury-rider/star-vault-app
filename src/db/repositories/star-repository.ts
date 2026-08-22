@@ -1,5 +1,9 @@
 import { DBAdapter } from '../adapter/db-adapter';
-import { Star, CustomAttribute } from '../../modules/stars/types/star-types';
+import {
+  Star,
+  CustomAttribute,
+  Space,
+} from '../../modules/stars/types/star-types';
 
 export class StarRepository {
   private adapter: DBAdapter;
@@ -15,8 +19,8 @@ export class StarRepository {
         `INSERT INTO Person (
           id, userId, stageName, originalName, countryOfOrigin,
           birthday, height, weight, officialWebsite, bio,
-          imagePath, createdAt, updatedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          imagePath, space, createdAt, updatedAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           star.id,
           star.userId ?? null,
@@ -29,12 +33,12 @@ export class StarRepository {
           star.officialWebsite ?? null,
           star.bio ?? null,
           star.imagePath ?? null,
+          star.space,
           star.createdAt,
           star.updatedAt,
         ],
       );
 
-      // Insert custom attributes
       if (star.customAttributes && star.customAttributes.length > 0) {
         for (const attr of star.customAttributes) {
           await tx.execute(
@@ -47,30 +51,27 @@ export class StarRepository {
     });
   }
 
-  // ─── READ ALL ─────────────────────────────────────────────
-  async findAll(): Promise<Star[]> {
-    console.log('💾 StarRepo.findAll');
+  // ─── READ ALL (scoped to a space) ──────────────────────────
+  async findAll(space: Space): Promise<Star[]> {
+    console.log('💾 StarRepo.findAll:', space);
     const result = await this.adapter.execute(
-      `SELECT * FROM Person ORDER BY stageName ASC;`,
+      `SELECT * FROM Person WHERE space = ? ORDER BY stageName ASC;`,
+      [space],
     );
 
-    console.log('💾 StarRepo.findAll raw result:', JSON.stringify(result));
     console.log('💾 StarRepo.findAll rows:', result.rows?.length);
 
     if (!result.rows || result.rows.length === 0) {
-      console.log('💾 StarRepo.findAll — no rows found');
       return [];
     }
 
     const stars: Star[] = await Promise.all(
       result.rows.map(async row => {
-        console.log('💾 Mapping row:', JSON.stringify(row));
         const attrs = await this.findCustomAttributes(row.id);
         return this.mapRowToStar(row, attrs);
       }),
     );
 
-    console.log('💾 StarRepo.findAll mapped stars:', stars.length);
     return stars;
   }
 
@@ -89,7 +90,7 @@ export class StarRepository {
     return this.mapRowToStar(result.rows[0], attrs);
   }
 
-  // ─── UPDATE ───────────────────────────────────────────────
+  // ─── UPDATE (space is immutable — not part of SET) ─────────
   async update(star: Star): Promise<void> {
     await this.adapter.transaction(async tx => {
       await tx.execute(
@@ -120,7 +121,6 @@ export class StarRepository {
         ],
       );
 
-      // Replace custom attributes
       await tx.execute(`DELETE FROM CustomAttribute WHERE personId = ?;`, [
         star.id,
       ]);
@@ -139,20 +139,18 @@ export class StarRepository {
 
   // ─── DELETE ───────────────────────────────────────────────
   async delete(id: string): Promise<void> {
-    // CASCADE handles CustomAttribute, StarImage, StarMovie
     await this.adapter.execute(`DELETE FROM Person WHERE id = ?;`, [id]);
   }
 
-  // ─── SEARCH ───────────────────────────────────────────────
-  async search(query: string): Promise<Star[]> {
+  // ─── SEARCH (scoped to a space) ────────────────────────────
+  async search(query: string, space: Space): Promise<Star[]> {
     const like = `%${query}%`;
     const result = await this.adapter.execute(
       `SELECT * FROM Person
-       WHERE stageName LIKE ?
-          OR originalName LIKE ?
-          OR bio LIKE ?
+       WHERE space = ?
+         AND (stageName LIKE ? OR originalName LIKE ? OR bio LIKE ?)
        ORDER BY stageName ASC;`,
-      [like, like, like],
+      [space, like, like, like],
     );
 
     const stars: Star[] = await Promise.all(
@@ -194,6 +192,7 @@ export class StarRepository {
       bio: row.bio ?? undefined,
       imagePath: row.imagePath ?? undefined,
       customAttributes: attrs,
+      space: (row.space ?? 'private') as Space,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

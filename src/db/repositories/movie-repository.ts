@@ -1,5 +1,6 @@
 import { DBAdapter } from '../adapter/db-adapter';
 import { Movie, MovieCast } from '../../modules/movies/types/movie-types';
+import { Space } from '../../modules/stars/types/star-types';
 
 export class MovieRepository {
   private adapter: DBAdapter;
@@ -14,8 +15,8 @@ export class MovieRepository {
       await tx.execute(
         `INSERT INTO Movie (
           id, title, year, genre, director, synopsis,
-          imagePath, createdAt, updatedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          imagePath, space, createdAt, updatedAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           movie.id,
           movie.title,
@@ -24,6 +25,7 @@ export class MovieRepository {
           movie.director ?? null,
           movie.synopsis ?? null,
           movie.imagePath ?? null,
+          movie.space,
           movie.createdAt,
           movie.updatedAt,
         ],
@@ -41,11 +43,12 @@ export class MovieRepository {
     });
   }
 
-  // ─── READ ALL ─────────────────────────────────────────────
-  async findAll(): Promise<Movie[]> {
-    console.log('💾 MovieRepo.findAll');
+  // ─── READ ALL (scoped to a space) ──────────────────────────
+  async findAll(space: Space): Promise<Movie[]> {
+    console.log('💾 MovieRepo.findAll:', space);
     const result = await this.adapter.execute(
-      `SELECT * FROM Movie ORDER BY year DESC, title ASC;`,
+      `SELECT * FROM Movie WHERE space = ? ORDER BY year DESC, title ASC;`,
+      [space],
     );
 
     console.log('💾 MovieRepo.findAll rows:', result.rows?.length);
@@ -79,7 +82,7 @@ export class MovieRepository {
     return this.mapRowToMovie(result.rows[0], cast);
   }
 
-  // ─── UPDATE ───────────────────────────────────────────────
+  // ─── UPDATE (space is immutable — not part of SET) ─────────
   async update(movie: Movie): Promise<void> {
     await this.adapter.transaction(async tx => {
       await tx.execute(
@@ -104,7 +107,6 @@ export class MovieRepository {
         ],
       );
 
-      // Replace cast
       await tx.execute(`DELETE FROM StarMovie WHERE movieId = ?;`, [movie.id]);
 
       if (movie.cast && movie.cast.length > 0) {
@@ -124,17 +126,15 @@ export class MovieRepository {
     await this.adapter.execute(`DELETE FROM Movie WHERE id = ?;`, [id]);
   }
 
-  // ─── SEARCH ───────────────────────────────────────────────
-  async search(query: string): Promise<Movie[]> {
+  // ─── SEARCH (scoped to a space) ────────────────────────────
+  async search(query: string, space: Space): Promise<Movie[]> {
     const like = `%${query}%`;
     const result = await this.adapter.execute(
       `SELECT * FROM Movie
-       WHERE title LIKE ?
-          OR director LIKE ?
-          OR genre LIKE ?
-          OR synopsis LIKE ?
+       WHERE space = ?
+         AND (title LIKE ? OR director LIKE ? OR genre LIKE ? OR synopsis LIKE ?)
        ORDER BY year DESC, title ASC;`,
-      [like, like, like, like],
+      [space, like, like, like, like],
     );
 
     const movies: Movie[] = await Promise.all(
@@ -175,6 +175,7 @@ export class MovieRepository {
       synopsis: row.synopsis ?? undefined,
       imagePath: row.imagePath ?? undefined,
       cast,
+      space: (row.space ?? 'private') as Space,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

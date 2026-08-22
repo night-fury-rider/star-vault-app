@@ -1,13 +1,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { StarService } from '../../modules/stars/services/StarService';
-import { Star } from '../../modules/stars/types/star-types';
+import { Star, Space } from '../../modules/stars/types/star-types';
 
 export const fetchAllStars = createAsyncThunk(
   'stars/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (space: Space, { rejectWithValue }) => {
     try {
-      console.log('🎬 Thunk: fetchAllStars start');
-      const stars = await StarService.getAllStars();
+      console.log('🎬 Thunk: fetchAllStars start:', space);
+      const stars = await StarService.getAllStars(space);
       console.log('🎬 Thunk: fetchAllStars result:', stars.length);
       return stars;
     } catch (e: any) {

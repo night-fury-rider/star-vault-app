@@ -20,7 +20,7 @@ import { ImportService } from '../../../services/ImportService';
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 
-const ENDPOINT_SECRET = 'https://cdn.starvault.io/v1/feed';
+const ENDPOINT_SECRET = 'dragon';
 const ACCESS_KEY = 'starvault_access';
 
 const THEMES: { name: ThemeName; label: string; color: string; bg: string }[] =
@@ -190,8 +190,8 @@ const SettingsScreen = () => {
               try {
                 const result = await ImportService.importAll(data);
                 await Promise.all([
-                  dispatch(fetchAllStars()),
-                  dispatch(fetchAllMovies()),
+                  dispatch(fetchAllStars(isUnlocked ? 'private' : 'public')),
+                  dispatch(fetchAllMovies(isUnlocked ? 'private' : 'public')),
                 ]);
                 Alert.alert(
                   'Import Complete',
@@ -234,8 +234,8 @@ const SettingsScreen = () => {
               setDeleting(true);
               await ExportService.deleteAll();
               await Promise.all([
-                dispatch(fetchAllStars()),
-                dispatch(fetchAllMovies()),
+                dispatch(fetchAllStars(isUnlocked ? 'private' : 'public')),
+                dispatch(fetchAllMovies(isUnlocked ? 'private' : 'public')),
               ]);
               Alert.alert('Done', 'All data has been deleted.');
             } catch (e: any) {

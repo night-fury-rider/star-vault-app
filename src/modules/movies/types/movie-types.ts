@@ -1,3 +1,5 @@
+import { Space } from '../../stars/types/star-types';
+
 export interface MovieCast {
   id: string;
   personId: string;
@@ -15,6 +17,7 @@ export interface Movie {
   synopsis?: string;
   imagePath?: string;
   cast?: MovieCast[];
+  space: Space;
   createdAt: string;
   updatedAt: string;
 }

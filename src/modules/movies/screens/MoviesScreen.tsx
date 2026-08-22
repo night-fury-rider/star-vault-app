@@ -39,12 +39,13 @@ const MoviesScreen = () => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (!isUnlocked) {
-      return;
-    }
-    console.log('🎬 MoviesScreen mounted — fetching movies');
-    dispatch(fetchAllMovies());
-  }, [dispatch]);
+    const space = isUnlocked ? 'private' : 'public';
+    console.log(
+      '🎬 MoviesScreen mounted/mode changed — fetching movies:',
+      space,
+    );
+    dispatch(fetchAllMovies(space));
+  }, [dispatch, isUnlocked]);
 
   const filteredMovies = movies.filter(movie => {
     const query = searchQuery.toLowerCase();
@@ -117,45 +118,6 @@ const MoviesScreen = () => {
     />
   );
 
-  if (!isUnlocked) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.background,
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingHorizontal: 40,
-          },
-        ]}
-      >
-        <Text style={{ fontSize: 64, marginBottom: 20 }}>🚀</Text>
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: '700',
-            color: theme.text.primary,
-            marginBottom: 10,
-            textAlign: 'center',
-          }}
-        >
-          Coming Soon
-        </Text>
-        <Text
-          style={{
-            fontSize: 14,
-            color: theme.text.secondary,
-            textAlign: 'center',
-            lineHeight: 22,
-          }}
-        >
-          This feature will be available in an upcoming release.
-        </Text>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Search + Toggle Row */}
@@ -227,7 +189,9 @@ const MoviesScreen = () => {
             viewMode === 'list' ? () => <View style={styles.separator} /> : null
           }
           refreshing={loading}
-          onRefresh={() => dispatch(fetchAllMovies())}
+          onRefresh={() =>
+            dispatch(fetchAllMovies(isUnlocked ? 'private' : 'public'))
+          }
         />
       </Animated.View>
 

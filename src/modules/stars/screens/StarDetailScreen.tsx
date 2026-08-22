@@ -51,8 +51,8 @@ const StarDetailScreen = () => {
 
   // ─── Load linked movies on mount ─────────────────────────
   useEffect(() => {
-    dispatch(fetchStarMovies(star.id));
-  }, [dispatch, star.id]);
+    dispatch(fetchStarMovies({ starId: star.id, space: star.space }));
+  }, [dispatch, star.id, star.space]);
 
   // ─── Header buttons ──────────────────────────────────────
   useLayoutEffect(() => {
@@ -124,7 +124,13 @@ const StarDetailScreen = () => {
           text: 'Remove',
           style: 'destructive',
           onPress: () =>
-            dispatch(removeStarMovie({ starId: star.id, movieId: movie.id })),
+            dispatch(
+              removeStarMovie({
+                starId: star.id,
+                movieId: movie.id,
+                space: star.space,
+              }),
+            ),
         },
       ],
     );

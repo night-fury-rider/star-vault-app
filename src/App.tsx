@@ -7,7 +7,7 @@ import { ThemeProvider } from './theme';
 import TabNavigator from './navigation/TabNavigator';
 import { store } from './store/store';
 import { initDBAdapter } from './db/db-provider';
-import { createTables } from './db/db-init';
+import { createTables, ensureSpaceColumn } from './db/db-init';
 import StorageService from './services/StorageService';
 import LoggerService from './services/LoggerService';
 import { setUnlocked } from './store/slices/access-slice';
@@ -24,6 +24,8 @@ const AppContent = () => {
       try {
         const adapter = initDBAdapter();
         await createTables(adapter);
+        await ensureSpaceColumn(adapter, 'Person');
+        await ensureSpaceColumn(adapter, 'Movie');
         setDbReady(true);
       } catch (e: any) {
         console.error('❌ Setup error:', e);

@@ -18,7 +18,7 @@ import { CustomAttribute, Star } from '../types/star-types';
 import BaseInput from '../../../components/BaseInput';
 import BaseDatePicker from '../../../components/BaseDatePicker';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
-import { useAppDispatch } from '../../../store/store-hooks';
+import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { createStar, updateStar } from '../../../store/thunks/star-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -64,6 +64,7 @@ const AddStarScreen = () => {
 
   const [errors, setErrors] = useState<{ stageName?: string }>({});
   const [saving, setSaving] = useState(false);
+  const isUnlocked = useAppSelector(state => state.access.isUnlocked);
 
   // ─── Image picker ─────────────────────────────────────────
   const handlePickImage = () => {
@@ -145,6 +146,7 @@ const AddStarScreen = () => {
           customAttributes: customAttributes.filter(
             attr => attr.key.trim() && attr.value.trim(),
           ),
+          space: existingStar!.space, // immutable — can't move spaces via edit
           updatedAt: new Date().toISOString(),
         };
 
@@ -177,6 +179,7 @@ const AddStarScreen = () => {
           customAttributes: customAttributes.filter(
             attr => attr.key.trim() && attr.value.trim(),
           ),
+          space: isUnlocked ? 'private' : 'public',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };

@@ -1,16 +1,16 @@
 import { StarRepository } from '../../../db/repositories/star-repository';
 import { GalleryRepository } from '../../../db/repositories/gallery-repository';
 import { getDBAdapter } from '../../../db/db-provider';
-import { Star } from '../types/star-types';
+import { Star, Space } from '../types/star-types';
 import { GalleryMedia } from '../../../navigation/navigation-types';
 
 const getStarRepo = () => new StarRepository(getDBAdapter());
 const getGalleryRepo = () => new GalleryRepository(getDBAdapter());
 
 export const StarService = {
-  async getAllStars(): Promise<Star[]> {
-    console.log('📋 StarService.getAllStars');
-    const stars = await getStarRepo().findAll();
+  async getAllStars(space: Space): Promise<Star[]> {
+    console.log('📋 StarService.getAllStars:', space);
+    const stars = await getStarRepo().findAll(space);
     console.log('📋 Found stars:', stars.length);
     return stars;
   },
@@ -21,7 +21,7 @@ export const StarService = {
   },
 
   async createStar(star: Star): Promise<void> {
-    console.log('⭐ StarService.createStar:', star.stageName);
+    console.log('⭐ StarService.createStar:', star.stageName, star.space);
     await getStarRepo().insert(star);
     console.log('✅ StarService.createStar done');
   },
@@ -38,12 +38,12 @@ export const StarService = {
     console.log('✅ StarService.deleteStar done');
   },
 
-  async searchStars(query: string): Promise<Star[]> {
-    console.log('🔍 StarService.searchStars:', query);
+  async searchStars(query: string, space: Space): Promise<Star[]> {
+    console.log('🔍 StarService.searchStars:', query, space);
     if (!query.trim()) {
-      return getStarRepo().findAll();
+      return getStarRepo().findAll(space);
     }
-    return getStarRepo().search(query);
+    return getStarRepo().search(query, space);
   },
 
   async getGallery(starId: string): Promise<GalleryMedia[]> {

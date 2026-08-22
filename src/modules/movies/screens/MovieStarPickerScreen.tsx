@@ -77,6 +77,7 @@ const MovieStarPickerScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [changeCount, setChangeCount] = useState(0);
+  const isUnlocked = useAppSelector(state => state.access.isUnlocked);
 
   const scaleAnims = useRef<Record<string, Animated.Value>>({});
   const getScaleAnim = (id: string) => {
@@ -93,8 +94,8 @@ const MovieStarPickerScreen = () => {
   } = useSnackbar();
 
   useEffect(() => {
-    dispatch(fetchAllStars());
-  }, [dispatch]);
+    dispatch(fetchAllStars(isUnlocked ? 'private' : 'public'));
+  }, [dispatch, isUnlocked]);
 
   // ── Done button in header ─────────────────────────────────
   useEffect(() => {
@@ -135,7 +136,13 @@ const MovieStarPickerScreen = () => {
     const wasLinked = isLinked(star.id);
     try {
       if (wasLinked) {
-        await dispatch(removeStarMovie({ starId: star.id, movieId: movie.id }));
+        await dispatch(
+          removeStarMovie({
+            starId: star.id,
+            movieId: movie.id,
+            space: movie.space,
+          }),
+        );
         showSnackbar(`"${star.stageName}" removed`);
       } else {
         await dispatch(
@@ -159,6 +166,7 @@ const MovieStarPickerScreen = () => {
   };
 
   const filteredStars = allStars.filter(star => {
+    if (star.space !== movie.space) return false;
     const q = searchQuery.toLowerCase();
     return (
       star.stageName.toLowerCase().includes(q) ||

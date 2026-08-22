@@ -17,7 +17,7 @@ import { MoviesStackParamList } from '../../../navigation/navigation-types';
 import { Movie } from '../types/movie-types';
 import BaseInput from '../../../components/BaseInput';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
-import { useAppDispatch } from '../../../store/store-hooks';
+import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { createMovie, updateMovie } from '../../../store/thunks/movie-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -51,6 +51,7 @@ const AddMovieScreen = () => {
     year?: string;
   }>({});
   const [saving, setSaving] = useState(false);
+  const isUnlocked = useAppSelector(state => state.access.isUnlocked);
 
   const handlePickImage = () => {
     Alert.alert('Select Image', 'Choose image source', [
@@ -137,6 +138,7 @@ const AddMovieScreen = () => {
           synopsis: synopsis.trim() || undefined,
           imagePath: imagePath || undefined,
           cast: [],
+          space: isUnlocked ? 'private' : 'public',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };

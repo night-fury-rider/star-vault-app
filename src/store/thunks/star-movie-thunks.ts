@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getDBAdapter } from '../../db/db-provider';
 import { Movie } from '../../modules/movies/types/movie-types';
+import { Space } from '../../modules/stars/types/star-types';
 import { fetchAllMovies } from './movie-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,14 +9,16 @@ import { v4 as uuidv4 } from 'uuid';
 // ─── Fetch all movies linked to a star ───────────────────────
 export const fetchStarMovies = createAsyncThunk(
   'starMovies/fetch',
-  async (starId: string, { rejectWithValue, dispatch, getState }) => {
+  async (
+    { starId, space }: { starId: string; space: Space },
+    { rejectWithValue, dispatch, getState },
+  ) => {
     try {
       console.log('🎬 Thunk: fetchStarMovies for star:', starId);
 
-      // Hydrate movies list if empty so MovieDetail can read cast from Redux.
       const state = getState() as any;
       if (state.movies.list.length === 0) {
-        await dispatch(fetchAllMovies());
+        await dispatch(fetchAllMovies(space));
       }
 
       const adapter = getDBAdapter();
@@ -36,6 +39,7 @@ export const fetchStarMovies = createAsyncThunk(
         synopsis: row.synopsis ?? undefined,
         imagePath: row.imagePath ?? undefined,
         cast: [],
+        space: (row.space ?? 'private') as Space,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         role: row.role ?? undefined,
@@ -76,8 +80,9 @@ export const addStarMovie = createAsyncThunk(
         );
       }
 
-      // Re-fetch movies from DB so the cast list in movies slice is up to date.
-      await dispatch(fetchAllMovies());
+      // movie.space is the correct space to re-fetch, since cast links
+      // only ever connect same-space rows via the pickers.
+      await dispatch(fetchAllMovies(movie.space));
 
       console.log('🎬 Thunk: addStarMovie done');
       return { starId, movie: { ...movie, role } };
@@ -92,7 +97,11 @@ export const addStarMovie = createAsyncThunk(
 export const removeStarMovie = createAsyncThunk(
   'starMovies/remove',
   async (
-    { starId, movieId }: { starId: string; movieId: string },
+    {
+      starId,
+      movieId,
+      space,
+    }: { starId: string; movieId: string; space: Space },
     { rejectWithValue, dispatch },
   ) => {
     try {
@@ -103,8 +112,7 @@ export const removeStarMovie = createAsyncThunk(
         [starId, movieId],
       );
 
-      // Re-fetch movies so the cast list in movies slice reflects the removal.
-      await dispatch(fetchAllMovies());
+      await dispatch(fetchAllMovies(space));
 
       console.log('🎬 Thunk: removeStarMovie done');
       return { starId, movieId };
