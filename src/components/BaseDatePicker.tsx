@@ -16,6 +16,9 @@ interface Props {
   required?: boolean;
 }
 
+const MIN_DATE = new Date(1900, 0, 1);
+const DEFAULT_OPEN_DATE = new Date(1990, 0, 1);
+
 const BaseDatePicker = ({ label, value, onChange, required }: Props) => {
   const { theme } = useTheme();
   const [show, setShow] = useState(false);
@@ -57,9 +60,10 @@ const BaseDatePicker = ({ label, value, onChange, required }: Props) => {
 
       {show && (
         <DateTimePicker
-          value={value || new Date()}
+          value={value || DEFAULT_OPEN_DATE}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          minimumDate={MIN_DATE}
           maximumDate={new Date()}
           onChange={(_, selectedDate) => {
             setShow(Platform.OS === 'ios');
