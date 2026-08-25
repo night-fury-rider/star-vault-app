@@ -4,13 +4,17 @@ A powerful offline-first mobile application for managing and exploring actor-cen
 
 ---
 
-## 📱 Screenshots
+<br />
+
+# 📱 Screenshots
 
 > _Coming soon_
 
 ---
 
-## 🚀 Features
+<br />
+
+# 🚀 Features
 
 - **Star Management** — Create, read, update, and delete stars with rich profile data
 - **Movie Association** — Link stars to movies with many-to-many relationships
@@ -22,23 +26,29 @@ A powerful offline-first mobile application for managing and exploring actor-cen
 
 ---
 
-## 🧱 Tech Stack
+<br />
 
-| Layer            | Technology                             |
-| ---------------- | -------------------------------------- |
-| Framework        | React Native CLI                       |
-| Language         | TypeScript                             |
-| Database         | SQLite (`react-native-sqlite-storage`) |
-| State Management | Redux Toolkit                          |
-| Navigation       | React Navigation (Bottom Tabs)         |
-| File System      | `react-native-fs`                      |
-| Image Picker     | `react-native-image-picker`            |
-| Icons            | `react-native-vector-icons`            |
-| Theming          | React Context API (custom, no library) |
+# 🧱 Tech Stack
+
+| Layer            | Technology                               | Version |
+| ---------------- | ---------------------------------------- | ------- |
+| Core Technology  | React Native                             | v0.85   |
+| Core Library     | React                                    | v19     |
+| Language         | TypeScript                               | v5      |
+| Database         | SQLite (`op-sqlite`)                     | v15     |
+| State Management | Redux Toolkit                            | v2      |
+| Navigation       | React Navigation (Bottom Tabs)           | v7      |
+| Image Picker     | `react-native-image-picker`              | v8      |
+| Date Picker      | `@react-native-community/datetimepicker` | v9      |
+| Document Picker  | `@react-native-documents/picker`         | v12     |
+| Icons            | `react-native-vector-icons`              | v10     |
+| Theming          | React Context API (custom, no library)   |         |
 
 ---
 
-## 📂 Project Structure
+<br />
+
+# 📂 Project Structure
 
 ```
 StarVault/
@@ -76,81 +86,71 @@ StarVault/
 
 ---
 
-## 🗄 Database Schema
+<br />
 
-```
-Person
-  id | userId | name | bio | createdAt | updatedAt
-
-StarImage
-  id | personId (FK) | imagePath | createdAt
-
-Movie
-  id | title | year | createdAt
-
-StarMovie
-  id | personId (FK) | movieId (FK) | role
-```
-
----
+# 🛠 Getting Started
 
 ## ⚙️ Prerequisites
 
-| Tool             | Version          |
-| ---------------- | ---------------- |
-| Node.js          | >= 22.13.0       |
-| React Native CLI | Latest           |
-| Xcode            | >= 14 (iOS)      |
-| Android Studio   | Latest (Android) |
-| CocoaPods        | Latest (iOS)     |
-| JDK              | >= 17 (Android)  |
+| Tool             | Version    |
+| ---------------- | ---------- |
+| Node.js          | >= 22.13.0 |
+| React Native CLI | Latest     |
+| Android Studio   | Latest     |
+| JDK              | 17         |
 
 ---
 
-## 🛠 Getting Started
+<br />
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/StarVault.git
-cd StarVault
-```
-
-### 2. Install dependencies
+### Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. iOS setup
+### Create the dev build
 
-```bash
-cd ios && pod install && cd ..
+```
+npm run testmode
 ```
 
-### 4. Start Metro bundler
+### Create the prod build
 
-```bash
-npx react-native start --reset-cache
+```
+npm run prodmode
 ```
 
-### 5. Run the app
+### Install the app
 
-**iOS:**
-
-```bash
-npx react-native run-ios
 ```
-
-**Android:**
-
-```bash
 npm run android
 ```
 
+### Enable Wireless hot reload on Mobile
+
+- Make sure that mobile with USB debugging enabled
+- Make sure that mobile and laptop are on the same wifi.
+- Run `adb devices` to get Mobile device name.
+- Run `ipconfig getifaddr en0` to get the IP (v4).
+- Connect mobile to laptop via USB cable.
+- Install the app
+
+```
+npm run android
+```
+
+- Disconnect mobile from USB. Metro bundler will be disconnected.
+- Shake the mobile to open the React Native Dev menu. Select Settings. Open Debug server host & port for device.
+- Enter IP v4 (from step 1) and port number (Generally 8081). Ex. `11.22.33.44:8081`
+- Shake the mobile to open the React Native Dev menu .
+- Select Reload. Now hot reload should work.
+
+  <br/><br/>
+
 ---
 
-## 🎨 Theming
+# 🎨 Theming
 
 StarVault includes a custom theming system built with React Context API — no external libraries.
 
@@ -164,35 +164,7 @@ Switch themes anytime from the **Settings** tab.
 
 ---
 
-## 🏗 Architecture Principles
-
-- **Offline First** — All data stored locally via SQLite
-- **ACID Compliant** — Reliable local transactions
-- **Modular Structure** — Each feature is a self-contained module
-- **Repository Pattern** — UI is fully decoupled from data logic
-- **Sync Ready** — Schema supports future backend sync with `updatedAt` conflict resolution
-- **Multi-user Ready** — `userId` field present in schema for future use
-
----
-
-## 🔄 Roadmap
-
-- [x] Project setup with TypeScript
-- [x] Bottom tab navigation
-- [x] Custom theming system
-- [ ] SQLite setup and schema
-- [ ] Star CRUD (service layer)
-- [ ] Star list UI
-- [ ] Search
-- [ ] Image gallery
-- [ ] Movie association
-- [ ] Import / Export
-- [ ] Backend sync (Spring Boot)
-- [ ] Authentication (JWT)
-
----
-
-## Database Inspection
+# Database Inspection
 
 Pull the SQLite database from the Android emulator to your desktop:
 
@@ -205,3 +177,45 @@ This will create `starvault.db` on the Desktop.
 Open DBeaver. Press Create New Database. Select Database "SQLite". Select the `starvault.db` in the path and press the Finish Button.
 
 Now we can see the current database values using DBeaver.
+
+# Create the release build
+
+- Make sure that `my-upload-key.keystore` file is kept under the `android/app` directory
+- Make sure that `gradle.properties` file is kept under the `.gradle` directory. In Windows, `.gradle` directory is under `C:\Users\<username>`.
+- Increment `version` in `package.json`.
+- Increment `versionMajor` or `versionMinor` or `versionPatch` in `android/app/build.gradle`
+- Create the apk build.
+
+```
+npm run android-build-apk
+```
+
+- Uninstall the app from device (from work profile as well if available). Connect the device using USB.
+- Install the apk file onto device
+
+```
+adb -s <device_name> install android/app/build/outputs/apk/release/app-release.apk
+```
+
+- Download the [Screenshot JSON file](https://gist.githubusercontent.com/night-fury-rider/feb99855cc1fac1320d2dfc430083711/raw/0941fe3697494923b9234363f1e48d5eb4b1a9a9/rare-contacts-screenshot-data.json) and import it using `Tools` Tab's `Import Backup` feature.
+- Complete the sanity testing and capture the screenshots.
+- Update the screenshots in this README.
+- Capture the home screen screenshot on emulator with Nexus_7_API_33.
+- Capture the home screen screenshot on emulator with Nexus_10_API_33.
+- Create a [release on Github](https://github.com/night-fury-rider/rare-contacts/releases). Use [Github filter](https://github.com/night-fury-rider/rare-contacts/compare/v2.1.0...main) for extracting data for release notes.
+- Create the release build (aab build).
+
+```
+npm run android-build
+```
+
+<br/><br/>
+
+# Deploy the App on PlayStore
+
+1. Login into [Developer Console Account](https://play.google.com/console/developers)
+2. Select the app from the App list. It should open the App Dashboard.
+3. Select `Production` (which is under `Release`) from the sidebar.
+4. Click on `Create new release` which is on the right top. It would open `Create production release`.
+5. Upload the build file and follow the instructions.
+   <br/><br/>
