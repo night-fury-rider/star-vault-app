@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { version as APP_VERSION } from '../../../../package.json';
 import { useTheme } from '../../../theme';
 import { ThemeName } from '../../../theme';
 import { Typography } from '../../../theme';
@@ -94,7 +95,7 @@ const SettingsScreen = () => {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const summary = await ExportService.getSummary();
+      const summary = await ExportService.getSummary(currentSpace);
       Alert.alert(
         'Export Data',
         `This will export:\n\n• ${summary.stars} star${
@@ -114,7 +115,7 @@ const SettingsScreen = () => {
             text: 'Export',
             onPress: async () => {
               try {
-                await ExportService.exportAll();
+                await ExportService.exportAll(currentSpace);
               } catch (e: any) {
                 Alert.alert(
                   'Export Failed',
@@ -176,12 +177,13 @@ const SettingsScreen = () => {
             text: 'Import',
             onPress: async () => {
               try {
-                const result = await ImportService.importAll(data);
-                // Import always lands in the private space, so refresh
-                // private-space data regardless of currentSpace.
+                const result = await ImportService.importAll(
+                  data,
+                  currentSpace,
+                );
                 await Promise.all([
-                  dispatch(fetchAllStars('private')),
-                  dispatch(fetchAllMovies('private')),
+                  dispatch(fetchAllStars(currentSpace)),
+                  dispatch(fetchAllMovies(currentSpace)),
                 ]);
                 Alert.alert(
                   'Import Complete',
@@ -591,6 +593,31 @@ const SettingsScreen = () => {
         </>
       )}
 
+      {/* ── ABOUT ─────────────────────────────────────── */}
+      <Text
+        style={[
+          styles.sectionTitle,
+          { color: theme.text.secondary, marginTop: 28 },
+        ]}
+      >
+        ABOUT
+      </Text>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <View style={styles.aboutRow}>
+          <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
+            Version
+          </Text>
+          <Text style={[styles.aboutValue, { color: theme.text.primary }]}>
+            {APP_VERSION}
+          </Text>
+        </View>
+      </View>
+
       {/* ── Current Theme Info ────────────────────────── */}
       <View
         style={[
@@ -610,6 +637,13 @@ const SettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  aboutLabel: { fontSize: 14, fontWeight: '600' },
+  aboutRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  aboutValue: { fontSize: 14, fontWeight: '500' },
   actionBtn: {
     borderRadius: 6,
     borderWidth: 1,
