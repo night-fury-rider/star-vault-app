@@ -107,7 +107,7 @@ const SettingsScreen = () => {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const summary = await ExportService.getSummary(currentSpace);
+      const summary = await ExportService.getSummary();
       Alert.alert(
         'Export Data',
         `This will export:\n\n• ${summary.stars} star${
@@ -127,7 +127,7 @@ const SettingsScreen = () => {
             text: 'Export',
             onPress: async () => {
               try {
-                await ExportService.exportAll(currentSpace);
+                await ExportService.exportAll();
               } catch (e: any) {
                 Alert.alert(
                   'Export Failed',
@@ -189,13 +189,12 @@ const SettingsScreen = () => {
             text: 'Import',
             onPress: async () => {
               try {
-                const result = await ImportService.importAll(
-                  data,
-                  currentSpace,
-                );
+                const result = await ImportService.importAll(data);
+                // Import always lands in the private space, so refresh
+                // private-space data regardless of currentSpace.
                 await Promise.all([
-                  dispatch(fetchAllStars(currentSpace)),
-                  dispatch(fetchAllMovies(currentSpace)),
+                  dispatch(fetchAllStars('private')),
+                  dispatch(fetchAllMovies('private')),
                 ]);
                 Alert.alert(
                   'Import Complete',

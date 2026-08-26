@@ -1,9 +1,11 @@
 import { Share } from 'react-native';
 import { getDBAdapter } from '../db/db-provider';
+import { Space } from '../modules/stars/types/star-types';
 
 export interface StarVaultExport {
   version: 1;
   exportedAt: string;
+  space: Space;
   tables: {
     Person: any[];
     CustomAttribute: any[];
@@ -14,29 +16,61 @@ export interface StarVaultExport {
   };
 }
 
+// Export/Import are private-mode-only features (gated in the UI), so they
+// always operate on the 'private' space. Delete All remains available in
+// both modes and stays space-parameterized.
+const EXPORT_IMPORT_SPACE: Space = 'private';
+
 export const ExportService = {
+  // ─── Export — always scoped to the private space ─────────
+  // Cross-space linking is prevented at the picker level, so a Person's
+  // StarMovie/StarImage rows always belong to the same space as the
+  // Person/Movie itself. We scope by joining back to Person/Movie ids.
   async exportAll(): Promise<void> {
+    const space = EXPORT_IMPORT_SPACE;
     const adapter = getDBAdapter();
 
+    const [personResult, movieResult] = await Promise.all([
+      adapter.execute('SELECT * FROM Person WHERE space = ?;', [space]),
+      adapter.execute('SELECT * FROM Movie WHERE space = ?;', [space]),
+    ]);
+
     const [
-      personResult,
       customAttrResult,
       starImageResult,
-      movieResult,
       starMovieResult,
       movieImageResult,
     ] = await Promise.all([
-      adapter.execute('SELECT * FROM Person;'),
-      adapter.execute('SELECT * FROM CustomAttribute;'),
-      adapter.execute('SELECT * FROM StarImage;'),
-      adapter.execute('SELECT * FROM Movie;'),
-      adapter.execute('SELECT * FROM StarMovie;'),
-      adapter.execute('SELECT * FROM MovieImage;'),
+      adapter.execute(
+        `SELECT ca.* FROM CustomAttribute ca
+         INNER JOIN Person p ON p.id = ca.personId
+         WHERE p.space = ?;`,
+        [space],
+      ),
+      adapter.execute(
+        `SELECT si.* FROM StarImage si
+         INNER JOIN Person p ON p.id = si.personId
+         WHERE p.space = ?;`,
+        [space],
+      ),
+      adapter.execute(
+        `SELECT sm.* FROM StarMovie sm
+         INNER JOIN Person p ON p.id = sm.personId
+         WHERE p.space = ?;`,
+        [space],
+      ),
+      adapter.execute(
+        `SELECT mi.* FROM MovieImage mi
+         INNER JOIN Movie m ON m.id = mi.movieId
+         WHERE m.space = ?;`,
+        [space],
+      ),
     ]);
 
     const payload: StarVaultExport = {
       version: 1,
       exportedAt: new Date().toISOString(),
+      space,
       tables: {
         Person: personResult.rows,
         CustomAttribute: customAttrResult.rows,
@@ -48,26 +82,37 @@ export const ExportService = {
     };
 
     const json = JSON.stringify(payload, null, 2);
-    const filename = `starvault-export-${new Date()
+    const filename = `starvault-export-${space}-${new Date()
       .toISOString()
       .slice(0, 10)}.json`;
 
     await Share.share(
       { title: filename, message: json },
-      { dialogTitle: 'Export StarVault Data' },
+      { dialogTitle: `Export StarVault Data (${space})` },
     );
   },
 
+  // ─── Summary — always scoped to the private space ────────
   async getSummary(): Promise<{
     stars: number;
     movies: number;
     links: number;
   }> {
+    const space = EXPORT_IMPORT_SPACE;
     const adapter = getDBAdapter();
     const [stars, movies, links] = await Promise.all([
-      adapter.execute('SELECT COUNT(*) as count FROM Person;'),
-      adapter.execute('SELECT COUNT(*) as count FROM Movie;'),
-      adapter.execute('SELECT COUNT(*) as count FROM StarMovie;'),
+      adapter.execute('SELECT COUNT(*) as count FROM Person WHERE space = ?;', [
+        space,
+      ]),
+      adapter.execute('SELECT COUNT(*) as count FROM Movie WHERE space = ?;', [
+        space,
+      ]),
+      adapter.execute(
+        `SELECT COUNT(*) as count FROM StarMovie sm
+         INNER JOIN Person p ON p.id = sm.personId
+         WHERE p.space = ?;`,
+        [space],
+      ),
     ]);
     return {
       stars: stars.rows[0]?.count ?? 0,
@@ -76,15 +121,32 @@ export const ExportService = {
     };
   },
 
-  // Deletes all rows from all tables. Schema is preserved.
-  async deleteAll(): Promise<void> {
+  // ─── Delete — scoped to the given space only ─────────────
+  // Schema is preserved. Rows belonging to the other space are untouched.
+  async deleteAll(space: Space): Promise<void> {
     const adapter = getDBAdapter();
     // Order matters — child tables first to avoid FK constraint errors
-    await adapter.execute('DELETE FROM StarMovie;');
-    await adapter.execute('DELETE FROM MovieImage;');
-    await adapter.execute('DELETE FROM StarImage;');
-    await adapter.execute('DELETE FROM CustomAttribute;');
-    await adapter.execute('DELETE FROM Movie;');
-    await adapter.execute('DELETE FROM Person;');
+    await adapter.execute(
+      `DELETE FROM StarMovie
+       WHERE personId IN (SELECT id FROM Person WHERE space = ?);`,
+      [space],
+    );
+    await adapter.execute(
+      `DELETE FROM MovieImage
+       WHERE movieId IN (SELECT id FROM Movie WHERE space = ?);`,
+      [space],
+    );
+    await adapter.execute(
+      `DELETE FROM StarImage
+       WHERE personId IN (SELECT id FROM Person WHERE space = ?);`,
+      [space],
+    );
+    await adapter.execute(
+      `DELETE FROM CustomAttribute
+       WHERE personId IN (SELECT id FROM Person WHERE space = ?);`,
+      [space],
+    );
+    await adapter.execute('DELETE FROM Movie WHERE space = ?;', [space]);
+    await adapter.execute('DELETE FROM Person WHERE space = ?;', [space]);
   },
 };

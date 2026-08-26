@@ -1,6 +1,7 @@
 import { pick, keepLocalCopy, types } from '@react-native-documents/picker';
 import { getDBAdapter } from '../db/db-provider';
 import { StarVaultExport } from './ExportService';
+import { Space } from '../modules/stars/types/star-types';
 
 export interface ImportResult {
   stars: number;
@@ -41,7 +42,14 @@ export const ImportService = {
       throw new Error('Unrecognised file format. Expected a StarVault export.');
     }
 
-    const required = ['Person', 'CustomAttribute', 'StarImage', 'Movie', 'StarMovie', 'MovieImage'];
+    const required = [
+      'Person',
+      'CustomAttribute',
+      'StarImage',
+      'Movie',
+      'StarMovie',
+      'MovieImage',
+    ];
     for (const table of required) {
       if (!Array.isArray(parsed?.tables?.[table])) {
         throw new Error(`Invalid export: missing table "${table}".`);
@@ -52,9 +60,13 @@ export const ImportService = {
   },
 
   // ─── Step 3: Import into DB using INSERT OR REPLACE ──────
+  // Import is a private-mode-only feature (gated in the UI), so imported
+  // Person/Movie rows are always stamped with the 'private' space,
+  // regardless of what space they were originally exported from.
   // Insert order respects FK dependencies:
   // Person → CustomAttribute → StarImage → Movie → StarMovie → MovieImage
   async importAll(data: StarVaultExport): Promise<ImportResult> {
+    const targetSpace: Space = 'private';
     const adapter = getDBAdapter();
     const { tables } = data;
 
@@ -64,13 +76,23 @@ export const ImportService = {
         `INSERT OR REPLACE INTO Person
           (id, userId, stageName, originalName, countryOfOrigin,
            birthday, height, weight, officialWebsite, bio,
-           imagePath, createdAt, updatedAt)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
+           imagePath, space, createdAt, updatedAt)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);`,
         [
-          row.id, row.userId ?? null, row.stageName, row.originalName ?? null,
-          row.countryOfOrigin ?? null, row.birthday ?? null, row.height ?? null,
-          row.weight ?? null, row.officialWebsite ?? null, row.bio ?? null,
-          row.imagePath ?? null, row.createdAt, row.updatedAt,
+          row.id,
+          row.userId ?? null,
+          row.stageName,
+          row.originalName ?? null,
+          row.countryOfOrigin ?? null,
+          row.birthday ?? null,
+          row.height ?? null,
+          row.weight ?? null,
+          row.officialWebsite ?? null,
+          row.bio ?? null,
+          row.imagePath ?? null,
+          targetSpace,
+          row.createdAt,
+          row.updatedAt,
         ],
       );
     }
@@ -97,12 +119,19 @@ export const ImportService = {
     for (const row of tables.Movie) {
       await adapter.execute(
         `INSERT OR REPLACE INTO Movie
-          (id, title, year, genre, director, synopsis, imagePath, createdAt, updatedAt)
-         VALUES (?,?,?,?,?,?,?,?,?);`,
+          (id, title, year, genre, director, synopsis, imagePath, space, createdAt, updatedAt)
+         VALUES (?,?,?,?,?,?,?,?,?,?);`,
         [
-          row.id, row.title, row.year, row.genre ?? null,
-          row.director ?? null, row.synopsis ?? null,
-          row.imagePath ?? null, row.createdAt, row.updatedAt,
+          row.id,
+          row.title,
+          row.year,
+          row.genre ?? null,
+          row.director ?? null,
+          row.synopsis ?? null,
+          row.imagePath ?? null,
+          targetSpace,
+          row.createdAt,
+          row.updatedAt,
         ],
       );
     }
