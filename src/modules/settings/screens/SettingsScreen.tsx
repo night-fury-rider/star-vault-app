@@ -85,23 +85,10 @@ const SettingsScreen = () => {
   };
 
   const handleSwitchToPublic = () => {
-    Alert.alert(
-      'Lock This Device',
-      'This will hide private content. You can unlock it again from Settings.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Lock',
-          style: 'destructive',
-          onPress: () => {
-            dispatch(setUnlocked(false));
-            StorageService.set(ACCESS_KEY, false);
-            setEndpointStatus('idle');
-            setEndpointValue('');
-          },
-        },
-      ],
-    );
+    dispatch(setUnlocked(false));
+    StorageService.set(ACCESS_KEY, false);
+    setEndpointStatus('idle');
+    setEndpointValue('');
   };
 
   const handleExport = async () => {
