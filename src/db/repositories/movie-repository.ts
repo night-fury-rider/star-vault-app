@@ -1,5 +1,9 @@
 import { DBAdapter } from '../adapter/db-adapter';
-import { Movie, MovieCast } from '../../modules/movies/types/movie-types';
+import {
+  Movie,
+  MovieCast,
+  MovieCustomAttribute,
+} from '../../modules/movies/types/movie-types';
 import { Space } from '../../modules/stars/types/star-types';
 
 export class MovieRepository {
@@ -45,26 +49,68 @@ export class MovieRepository {
 
   // ─── READ ALL (scoped to a space) ──────────────────────────
   async findAll(space: Space): Promise<Movie[]> {
-    console.log('💾 MovieRepo.findAll:', space);
     const result = await this.adapter.execute(
       `SELECT * FROM Movie WHERE space = ? ORDER BY year DESC, title ASC;`,
       [space],
     );
 
-    console.log('💾 MovieRepo.findAll rows:', result.rows?.length);
-
     if (!result.rows || result.rows.length === 0) {
       return [];
     }
 
-    const movies: Movie[] = await Promise.all(
-      result.rows.map(async row => {
-        const cast = await this.findCast(row.id);
-        return this.mapRowToMovie(row, cast);
-      }),
+    const movieIds = result.rows.map((r: any) => r.id as string);
+    const placeholders = movieIds.map(() => '?').join(', ');
+
+    // Bulk-load cast for all movies in one query
+    const castResult = await this.adapter.execute(
+      `SELECT sm.id, sm.personId, sm.movieId, sm.role, p.stageName, p.imagePath
+       FROM StarMovie sm
+       LEFT JOIN Person p ON p.id = sm.personId
+       WHERE sm.movieId IN (${placeholders});`,
+      movieIds,
     );
 
-    return movies;
+    // Bulk-load custom attributes for all movies in one query
+    const attrResult = await this.adapter.execute(
+      `SELECT * FROM MovieCustomAttribute WHERE movieId IN (${placeholders});`,
+      movieIds,
+    );
+
+    // Group cast by movieId
+    const castByMovieId: Record<string, MovieCast[]> = {};
+    for (const row of castResult.rows) {
+      if (!castByMovieId[row.movieId]) {
+        castByMovieId[row.movieId] = [];
+      }
+      castByMovieId[row.movieId].push({
+        id: row.id,
+        personId: row.personId,
+        imagePath: row.imagePath ?? undefined,
+        stageName: row.stageName ?? 'Unknown',
+        role: row.role ?? undefined,
+      });
+    }
+
+    // Group attributes by movieId
+    const attrByMovieId: Record<string, MovieCustomAttribute[]> = {};
+    for (const row of attrResult.rows) {
+      if (!attrByMovieId[row.movieId]) {
+        attrByMovieId[row.movieId] = [];
+      }
+      attrByMovieId[row.movieId].push({
+        id: row.id,
+        key: row.key,
+        value: row.value,
+      });
+    }
+
+    return result.rows.map(row =>
+      this.mapRowToMovie(
+        row,
+        castByMovieId[row.id] ?? [],
+        attrByMovieId[row.id] ?? [],
+      ),
+    );
   }
 
   // ─── READ ONE ─────────────────────────────────────────────
@@ -79,7 +125,8 @@ export class MovieRepository {
     }
 
     const cast = await this.findCast(id);
-    return this.mapRowToMovie(result.rows[0], cast);
+    const customAttributes = await this.findCustomAttributes(id);
+    return this.mapRowToMovie(result.rows[0], cast, customAttributes);
   }
 
   // ─── UPDATE (space is immutable — not part of SET) ─────────
@@ -118,6 +165,20 @@ export class MovieRepository {
           );
         }
       }
+
+      await tx.execute(`DELETE FROM MovieCustomAttribute WHERE movieId = ?;`, [
+        movie.id,
+      ]);
+
+      if (movie.customAttributes && movie.customAttributes.length > 0) {
+        for (const attr of movie.customAttributes) {
+          await tx.execute(
+            `INSERT INTO MovieCustomAttribute (id, movieId, key, value)
+             VALUES (?, ?, ?, ?);`,
+            [attr.id, movie.id, attr.key, attr.value],
+          );
+        }
+      }
     });
   }
 
@@ -137,17 +198,72 @@ export class MovieRepository {
       [space, like, like, like, like],
     );
 
-    const movies: Movie[] = await Promise.all(
-      result.rows.map(async row => {
-        const cast = await this.findCast(row.id);
-        return this.mapRowToMovie(row, cast);
-      }),
+    if (!result.rows || result.rows.length === 0) {
+      return [];
+    }
+
+    const movieIds = result.rows.map((r: any) => r.id as string);
+    const placeholders = movieIds.map(() => '?').join(', ');
+
+    const castResult = await this.adapter.execute(
+      `SELECT sm.id, sm.personId, sm.movieId, sm.role, p.stageName, p.imagePath
+       FROM StarMovie sm
+       LEFT JOIN Person p ON p.id = sm.personId
+       WHERE sm.movieId IN (${placeholders});`,
+      movieIds,
     );
 
-    return movies;
+    const attrResult = await this.adapter.execute(
+      `SELECT * FROM MovieCustomAttribute WHERE movieId IN (${placeholders});`,
+      movieIds,
+    );
+
+    const castByMovieId: Record<string, MovieCast[]> = {};
+    for (const row of castResult.rows) {
+      if (!castByMovieId[row.movieId]) castByMovieId[row.movieId] = [];
+      castByMovieId[row.movieId].push({
+        id: row.id,
+        personId: row.personId,
+        imagePath: row.imagePath ?? undefined,
+        stageName: row.stageName ?? 'Unknown',
+        role: row.role ?? undefined,
+      });
+    }
+
+    const attrByMovieId: Record<string, MovieCustomAttribute[]> = {};
+    for (const row of attrResult.rows) {
+      if (!attrByMovieId[row.movieId]) attrByMovieId[row.movieId] = [];
+      attrByMovieId[row.movieId].push({
+        id: row.id,
+        key: row.key,
+        value: row.value,
+      });
+    }
+
+    return result.rows.map(row =>
+      this.mapRowToMovie(
+        row,
+        castByMovieId[row.id] ?? [],
+        attrByMovieId[row.id] ?? [],
+      ),
+    );
   }
 
   // ─── PRIVATE HELPERS ──────────────────────────────────────
+  private async findCustomAttributes(
+    movieId: string,
+  ): Promise<MovieCustomAttribute[]> {
+    const result = await this.adapter.execute(
+      `SELECT * FROM MovieCustomAttribute WHERE movieId = ?;`,
+      [movieId],
+    );
+    return result.rows.map(row => ({
+      id: row.id,
+      key: row.key,
+      value: row.value,
+    }));
+  }
+
   private async findCast(movieId: string): Promise<MovieCast[]> {
     const result = await this.adapter.execute(
       `SELECT sm.id, sm.personId, sm.role, p.stageName, p.imagePath
@@ -165,7 +281,11 @@ export class MovieRepository {
     }));
   }
 
-  private mapRowToMovie(row: any, cast: MovieCast[]): Movie {
+  private mapRowToMovie(
+    row: any,
+    cast: MovieCast[],
+    customAttributes: MovieCustomAttribute[] = [],
+  ): Movie {
     return {
       id: row.id,
       title: row.title,
@@ -175,6 +295,7 @@ export class MovieRepository {
       synopsis: row.synopsis ?? undefined,
       imagePath: row.imagePath ?? undefined,
       cast,
+      customAttributes,
       space: (row.space ?? 'private') as Space,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

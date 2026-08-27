@@ -40,6 +40,7 @@ const MovieDetailScreen = () => {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: movie.title,
+      headerTitleContainerStyle: { marginRight: 80 },
       headerRight: () => (
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
@@ -115,7 +116,10 @@ const MovieDetailScreen = () => {
   const renderInfoRow = (label: string, value?: string | null) => {
     if (!value) return null;
     return (
-      <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+      <View
+        key={label}
+        style={[styles.infoRow, { borderBottomColor: theme.border }]}
+      >
         <Text style={[styles.infoLabel, { color: theme.text.muted }]}>
           {label}
         </Text>
@@ -190,6 +194,23 @@ const MovieDetailScreen = () => {
           {renderInfoRow('Genre', movie.genre)}
           {renderInfoRow('Director', movie.director)}
         </View>
+
+        {/* Additional Info (Custom Attributes) */}
+        {movie.customAttributes && movie.customAttributes.length > 0 && (
+          <>
+            <BaseSectionHeader title="Additional Info" />
+            <View
+              style={[
+                styles.infoCard,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}
+            >
+              {movie.customAttributes.map(attr =>
+                renderInfoRow(attr.key, attr.value),
+              )}
+            </View>
+          </>
+        )}
 
         {/* ── Cast ─────────────────────────────────────── */}
         <View style={styles.castSectionRow}>

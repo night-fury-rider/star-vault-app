@@ -73,6 +73,43 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
       );
     `);
 
+    // Additive migrations for Movie — ALTER TABLE is a no-op if the column
+    // already exists is not supported by SQLite, so we check PRAGMA first.
+    const movieInfo = await adapter.execute(`PRAGMA table_info(Movie);`);
+    const movieCols = movieInfo.rows.map((r: any) => r.name as string);
+
+    const movieMigrations: { col: string; ddl: string }[] = [
+      { col: 'genre', ddl: 'ALTER TABLE Movie ADD COLUMN genre TEXT;' },
+      { col: 'director', ddl: 'ALTER TABLE Movie ADD COLUMN director TEXT;' },
+      { col: 'synopsis', ddl: 'ALTER TABLE Movie ADD COLUMN synopsis TEXT;' },
+      { col: 'imagePath', ddl: 'ALTER TABLE Movie ADD COLUMN imagePath TEXT;' },
+      {
+        col: 'space',
+        ddl: "ALTER TABLE Movie ADD COLUMN space TEXT NOT NULL DEFAULT 'private';",
+      },
+      {
+        col: 'updatedAt',
+        ddl: "ALTER TABLE Movie ADD COLUMN updatedAt TEXT NOT NULL DEFAULT '';",
+      },
+    ];
+
+    for (const m of movieMigrations) {
+      if (!movieCols.includes(m.col)) {
+        console.log(`🔧 Movie migration: adding column "${m.col}"`);
+        await adapter.execute(m.ddl);
+      }
+    }
+
+    await adapter.execute(`
+      CREATE TABLE IF NOT EXISTS MovieCustomAttribute (
+        id TEXT PRIMARY KEY NOT NULL,
+        movieId TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        FOREIGN KEY (movieId) REFERENCES Movie(id) ON DELETE CASCADE
+      );
+    `);
+
     await adapter.execute(`
       CREATE TABLE IF NOT EXISTS StarMovie (
         id TEXT PRIMARY KEY NOT NULL,

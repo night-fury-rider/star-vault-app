@@ -14,7 +14,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { useTheme } from '../../../theme';
 import { MoviesStackParamList } from '../../../navigation/navigation-types';
-import { Movie } from '../types/movie-types';
+import { Movie, MovieCustomAttribute } from '../types/movie-types';
 import BaseInput from '../../../components/BaseInput';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
@@ -46,6 +46,11 @@ const AddMovieScreen = () => {
     existingMovie?.imagePath,
   );
 
+  // ─── Custom attributes — pre-filled in edit mode ──────────
+  const [customAttributes, setCustomAttributes] = useState<
+    MovieCustomAttribute[]
+  >(existingMovie?.customAttributes ?? []);
+
   const [errors, setErrors] = useState<{
     title?: string;
     year?: string;
@@ -75,6 +80,28 @@ const AddMovieScreen = () => {
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  // ─── Custom attribute handlers ────────────────────────────
+  const handleAddAttribute = () => {
+    setCustomAttributes(prev => [
+      ...prev,
+      { id: uuidv4(), key: '', value: '' },
+    ]);
+  };
+
+  const handleUpdateAttribute = (
+    id: string,
+    field: 'key' | 'value',
+    text: string,
+  ) => {
+    setCustomAttributes(prev =>
+      prev.map(attr => (attr.id === id ? { ...attr, [field]: text } : attr)),
+    );
+  };
+
+  const handleRemoveAttribute = (id: string) => {
+    setCustomAttributes(prev => prev.filter(attr => attr.id !== id));
   };
 
   const validate = (): boolean => {
@@ -111,6 +138,9 @@ const AddMovieScreen = () => {
           director: director.trim() || undefined,
           synopsis: synopsis.trim() || undefined,
           imagePath: imagePath || undefined,
+          customAttributes: customAttributes.filter(
+            a => a.key.trim() && a.value.trim(),
+          ),
           updatedAt: new Date().toISOString(),
         };
 
@@ -138,6 +168,9 @@ const AddMovieScreen = () => {
           synopsis: synopsis.trim() || undefined,
           imagePath: imagePath || undefined,
           cast: [],
+          customAttributes: customAttributes.filter(
+            a => a.key.trim() && a.value.trim(),
+          ),
           space: isUnlocked ? 'private' : 'public',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -247,6 +280,53 @@ const AddMovieScreen = () => {
           textAlignVertical="top"
         />
 
+        {/* Custom Attributes */}
+        <BaseSectionHeader title="Custom Attributes" />
+
+        {customAttributes.map((attr, index) => (
+          <View key={attr.id} style={styles.attributeRow}>
+            <View style={styles.attributeInputs}>
+              <BaseInput
+                label={`Key ${index + 1}`}
+                placeholder="e.g. Budget"
+                value={attr.key}
+                onChangeText={text =>
+                  handleUpdateAttribute(attr.id, 'key', text)
+                }
+              />
+              <BaseInput
+                label={`Value ${index + 1}`}
+                placeholder="e.g. $160M"
+                value={attr.value}
+                onChangeText={text =>
+                  handleUpdateAttribute(attr.id, 'value', text)
+                }
+              />
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.removeButton,
+                { backgroundColor: theme.status.error },
+              ]}
+              onPress={() => handleRemoveAttribute(attr.id)}
+            >
+              <Text style={styles.removeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          style={[
+            styles.addAttributeButton,
+            { borderColor: theme.primary, backgroundColor: theme.card },
+          ]}
+          onPress={handleAddAttribute}
+        >
+          <Text style={[styles.addAttributeText, { color: theme.primary }]}>
+            + Add Custom Attribute
+          </Text>
+        </TouchableOpacity>
+
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
@@ -314,6 +394,40 @@ const styles = StyleSheet.create({
   synopsisInput: {
     height: 100,
     paddingTop: 12,
+  },
+  attributeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 8,
+  },
+  attributeInputs: {
+    flex: 1,
+  },
+  removeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 28,
+  },
+  removeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  addAttributeButton: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  addAttributeText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   bottomSpacing: {
     height: 20,
