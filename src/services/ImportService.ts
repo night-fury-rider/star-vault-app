@@ -65,8 +65,10 @@ export const ImportService = {
   // regardless of what space they were originally exported from.
   // Insert order respects FK dependencies:
   // Person → CustomAttribute → StarImage → Movie → StarMovie → MovieImage
-  async importAll(data: StarVaultExport): Promise<ImportResult> {
-    const targetSpace: Space = 'private';
+  async importAll(
+    data: StarVaultExport,
+    targetSpace: Space,
+  ): Promise<ImportResult> {
     const adapter = getDBAdapter();
     const { tables } = data;
 

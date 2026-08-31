@@ -26,8 +26,7 @@ export const ExportService = {
   // Cross-space linking is prevented at the picker level, so a Person's
   // StarMovie/StarImage rows always belong to the same space as the
   // Person/Movie itself. We scope by joining back to Person/Movie ids.
-  async exportAll(): Promise<void> {
-    const space = EXPORT_IMPORT_SPACE;
+  async exportAll(space: Space): Promise<void> {
     const adapter = getDBAdapter();
 
     const [personResult, movieResult] = await Promise.all([
@@ -93,12 +92,11 @@ export const ExportService = {
   },
 
   // ─── Summary — always scoped to the private space ────────
-  async getSummary(): Promise<{
+  async getSummary(space: Space): Promise<{
     stars: number;
     movies: number;
     links: number;
   }> {
-    const space = EXPORT_IMPORT_SPACE;
     const adapter = getDBAdapter();
     const [stars, movies, links] = await Promise.all([
       adapter.execute('SELECT COUNT(*) as count FROM Person WHERE space = ?;', [

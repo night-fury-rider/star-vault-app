@@ -98,8 +98,8 @@ const StarMoviePickerScreen = () => {
   } = useSnackbar();
 
   useEffect(() => {
-    dispatch(fetchAllMovies());
-  }, [dispatch]);
+    dispatch(fetchAllMovies(star.space));
+  }, [dispatch, star.space]);
 
   // ── Done button in header ─────────────────────────────────
   useEffect(() => {
