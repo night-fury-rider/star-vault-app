@@ -23,7 +23,7 @@ const NUM_COLUMNS = 2;
 // Fixed width: half screen minus outer padding (16 each side) minus inner margins
 const CARD_WIDTH =
   (SCREEN_WIDTH - 32 - CARD_MARGIN * NUM_COLUMNS * 2) / NUM_COLUMNS;
-const CARD_HEIGHT = 220;
+const CARD_HEIGHT = Math.round(CARD_WIDTH * 1.5);
 
 const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
   const { theme } = useTheme();
@@ -59,7 +59,7 @@ const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
           <Image
             source={{ uri: item.imagePath }}
             style={styles.image}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         ) : (
           <Text style={[styles.avatarText, { color: theme.primary }]}>
