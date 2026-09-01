@@ -23,7 +23,9 @@ const NUM_COLUMNS = 2;
 // Fixed width: half screen minus outer padding (16 each side) minus inner margins
 const CARD_WIDTH =
   (SCREEN_WIDTH - 32 - CARD_MARGIN * NUM_COLUMNS * 2) / NUM_COLUMNS;
-const CARD_HEIGHT = Math.round(CARD_WIDTH * 1.5);
+const TITLE_HEIGHT = 36;
+const IMAGE_HEIGHT = Math.round(CARD_WIDTH * 1.5);
+const CARD_HEIGHT = IMAGE_HEIGHT + TITLE_HEIGHT;
 
 const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
   const { theme } = useTheme();
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   imageContainer: {
-    height: '80%',
+    height: IMAGE_HEIGHT,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
@@ -111,7 +113,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   titleContainer: {
-    height: '20%',
+    height: TITLE_HEIGHT,
     justifyContent: 'center',
     paddingHorizontal: 10,
   },
