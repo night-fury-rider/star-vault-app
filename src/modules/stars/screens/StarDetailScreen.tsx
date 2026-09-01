@@ -409,14 +409,15 @@ const styles = StyleSheet.create({
   heroContainer: {
     height: 320,
     position: 'relative',
+    overflow: 'hidden',
   },
   heroCountry: {
     color: 'rgba(255,255,255,0.75)',
     fontSize: 13,
   },
   heroImage: {
-    height: '100%',
     width: '100%',
+    height: 560,
   },
   heroInitial: {
     fontSize: 96,
