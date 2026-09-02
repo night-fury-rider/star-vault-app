@@ -13,6 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import { truncateHeaderTitle } from '../../../services/UtilService';
 import { useTheme } from '../../../theme';
 import { StarsStackParamList } from '../../../navigation/navigation-types';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
@@ -57,7 +58,7 @@ const StarDetailScreen = () => {
   // ─── Header buttons ──────────────────────────────────────
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: star.stageName,
+      title: truncateHeaderTitle(star.stageName),
       headerRight: () => (
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
@@ -409,15 +410,14 @@ const styles = StyleSheet.create({
   heroContainer: {
     height: 320,
     position: 'relative',
-    overflow: 'hidden',
   },
   heroCountry: {
     color: 'rgba(255,255,255,0.75)',
     fontSize: 13,
   },
   heroImage: {
+    height: '100%',
     width: '100%',
-    height: 560,
   },
   heroInitial: {
     fontSize: 96,
