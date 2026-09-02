@@ -18,6 +18,7 @@ import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { deleteMovie } from '../../../store/thunks/movie-thunks';
 import { removeStarMovie } from '../../../store/thunks/star-movie-thunks';
+import { truncateHeaderTitle } from '../../../services/UtilService';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'MovieDetail'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'MovieDetail'>;
@@ -39,7 +40,7 @@ const MovieDetailScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: movie.title,
+      title: truncateHeaderTitle(movie.title),
       headerTitleContainerStyle: { marginRight: 80 },
       headerRight: () => (
         <View style={styles.headerButtons}>
@@ -403,8 +404,8 @@ const styles = StyleSheet.create({
   headerButton: { paddingHorizontal: 10, paddingVertical: 8 },
   headerButtons: { alignItems: 'center', flexDirection: 'row' },
   heroBadgeRow: { flexDirection: 'row', gap: 8 },
-  heroContainer: { height: 320, position: 'relative', overflow: 'hidden' },
-  heroImage: { width: '100%', height: 560 },
+  heroContainer: { height: 320, position: 'relative' },
+  heroImage: { height: '100%', width: '100%' },
   heroInitial: { fontSize: 80 },
   heroOverlay: {
     backgroundColor: 'rgba(0,0,0,0.45)',
