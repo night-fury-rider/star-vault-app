@@ -24,7 +24,7 @@ const NUM_COLUMNS = 2;
 const CARD_WIDTH =
   (SCREEN_WIDTH - 32 - CARD_MARGIN * NUM_COLUMNS * 2) / NUM_COLUMNS;
 const TITLE_HEIGHT = 36;
-const IMAGE_HEIGHT = Math.round(CARD_WIDTH * 1.5);
+const IMAGE_HEIGHT = Math.round(CARD_WIDTH * 1.2);
 const CARD_HEIGHT = IMAGE_HEIGHT + TITLE_HEIGHT;
 
 const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
