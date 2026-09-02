@@ -403,8 +403,8 @@ const styles = StyleSheet.create({
   headerButton: { paddingHorizontal: 10, paddingVertical: 8 },
   headerButtons: { alignItems: 'center', flexDirection: 'row' },
   heroBadgeRow: { flexDirection: 'row', gap: 8 },
-  heroContainer: { height: 320, position: 'relative' },
-  heroImage: { height: '100%', width: '100%' },
+  heroContainer: { height: 320, position: 'relative', overflow: 'hidden' },
+  heroImage: { width: '100%', height: 560 },
   heroInitial: { fontSize: 80 },
   heroOverlay: {
     backgroundColor: 'rgba(0,0,0,0.45)',
