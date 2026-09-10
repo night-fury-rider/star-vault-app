@@ -20,6 +20,7 @@ import { ExportService } from '../../../services/ExportService';
 import { ImportService } from '../../../services/ImportService';
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
+import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
 
 const ENDPOINT_SECRET = 'dragon';
 const ACCESS_KEY = 'starvault_access';
@@ -50,6 +51,22 @@ const SettingsScreen = () => {
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // ─── Developer options reveal ─────────────────────────────
+  const [devTapCount, setDevTapCount] = useState(0);
+  const [devOptionsVisible, setDevOptionsVisible] = useState(false);
+
+  const handleVersionTap = () => {
+    // Already visible or unlocked — nothing to do
+    if (devOptionsVisible || isUnlocked) return;
+    const next = devTapCount + 1;
+    if (next >= DEVELOPER_OPTIONS_TAP_COUNT) {
+      setDevOptionsVisible(true);
+      setDevTapCount(0);
+    } else {
+      setDevTapCount(next);
+    }
+  };
+
   const handleApplyEndpoint = () => {
     const trimmed = endpointValue.trim();
     if (trimmed === '') {
@@ -62,6 +79,9 @@ const SettingsScreen = () => {
       setEndpointStatus('connected');
       dispatch(setUnlocked(true));
       StorageService.set(ACCESS_KEY, true);
+      // Hide developer options once unlocked — no longer needed
+      setDevOptionsVisible(false);
+      setDevTapCount(0);
     } else {
       setEndpointStatus('unreachable');
       dispatch(setUnlocked(false));
@@ -487,8 +507,36 @@ const SettingsScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* ── DEVELOPER — Locked state only ────────────── */}
-      {!isUnlocked && (
+      {/* ── ABOUT ─────────────────────────────────────── */}
+      <Text
+        style={[
+          styles.sectionTitle,
+          { color: theme.text.secondary, marginTop: 28 },
+        ]}
+      >
+        ABOUT
+      </Text>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        {/* Version row — tap target for developer options reveal */}
+        <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
+          <View style={styles.aboutRow}>
+            <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
+              Version
+            </Text>
+            <Text style={[styles.aboutValue, { color: theme.text.primary }]}>
+              {APP_VERSION}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── DEVELOPER OPTIONS — revealed by 5 taps on version ── */}
+      {devOptionsVisible && !isUnlocked && (
         <>
           <Text
             style={[
@@ -496,7 +544,7 @@ const SettingsScreen = () => {
               { color: theme.text.secondary, marginTop: 28 },
             ]}
           >
-            DEVELOPER
+            DEVELOPER OPTIONS
           </Text>
           <View
             style={[
@@ -592,31 +640,6 @@ const SettingsScreen = () => {
           </View>
         </>
       )}
-
-      {/* ── ABOUT ─────────────────────────────────────── */}
-      <Text
-        style={[
-          styles.sectionTitle,
-          { color: theme.text.secondary, marginTop: 28 },
-        ]}
-      >
-        ABOUT
-      </Text>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
-        <View style={styles.aboutRow}>
-          <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
-            Version
-          </Text>
-          <Text style={[styles.aboutValue, { color: theme.text.primary }]}>
-            {APP_VERSION}
-          </Text>
-        </View>
-      </View>
 
       {/* ── Current Theme Info ────────────────────────── */}
       <View
