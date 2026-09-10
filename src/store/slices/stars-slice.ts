@@ -40,7 +40,9 @@ const starsSlice = createSlice({
 
     // Create
     builder.addCase(createStar.fulfilled, (state, action) => {
-      state.list.unshift(action.payload);
+      state.list = [...state.list, action.payload].sort((a, b) =>
+        a.stageName.localeCompare(b.stageName),
+      );
     });
 
     // Update
@@ -48,6 +50,9 @@ const starsSlice = createSlice({
       const index = state.list.findIndex(s => s.id === action.payload.id);
       if (index !== -1) {
         state.list[index] = action.payload;
+        state.list = [...state.list].sort((a, b) =>
+          a.stageName.localeCompare(b.stageName),
+        );
       }
     });
 
