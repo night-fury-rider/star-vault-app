@@ -41,7 +41,7 @@ const moviesSlice = createSlice({
     // Create
     builder.addCase(createMovie.fulfilled, (state, action) => {
       state.list = [...state.list, action.payload].sort(
-        (a, b) => b.year - a.year,
+        (a, b) => b.year - a.year || a.title.localeCompare(b.title),
       );
     });
 
@@ -50,7 +50,9 @@ const moviesSlice = createSlice({
       const index = state.list.findIndex(m => m.id === action.payload.id);
       if (index !== -1) {
         state.list[index] = action.payload;
-        state.list = [...state.list].sort((a, b) => b.year - a.year);
+        state.list = [...state.list].sort(
+          (a, b) => b.year - a.year || a.title.localeCompare(b.title),
+        );
       }
     });
 
