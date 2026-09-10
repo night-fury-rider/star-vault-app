@@ -40,7 +40,9 @@ const moviesSlice = createSlice({
 
     // Create
     builder.addCase(createMovie.fulfilled, (state, action) => {
-      state.list.unshift(action.payload);
+      state.list = [...state.list, action.payload].sort(
+        (a, b) => b.year - a.year,
+      );
     });
 
     // Update
@@ -48,6 +50,7 @@ const moviesSlice = createSlice({
       const index = state.list.findIndex(m => m.id === action.payload.id);
       if (index !== -1) {
         state.list[index] = action.payload;
+        state.list = [...state.list].sort((a, b) => b.year - a.year);
       }
     });
 
