@@ -18,7 +18,6 @@ import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { deleteMovie } from '../../../store/thunks/movie-thunks';
 import { removeStarMovie } from '../../../store/thunks/star-movie-thunks';
-import { truncateHeaderTitle } from '../../../services/UtilService';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'MovieDetail'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'MovieDetail'>;
@@ -40,8 +39,6 @@ const MovieDetailScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: truncateHeaderTitle(movie.title),
-      headerTitleContainerStyle: { marginRight: 80 },
       headerRight: () => (
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
@@ -50,6 +47,17 @@ const MovieDetailScreen = () => {
           <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
             <Icon name="trash-outline" size={22} color={theme.header.text} />
           </TouchableOpacity>
+        </View>
+      ),
+      headerTitle: () => (
+        <View style={styles.headerTitleContainer}>
+          <Text
+            ellipsizeMode="tail"
+            numberOfLines={1}
+            style={[styles.headerTitle, { color: theme.header.text }]}
+          >
+            {movie.title}
+          </Text>
         </View>
       ),
     });
@@ -401,8 +409,29 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   galleryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  headerButton: { paddingHorizontal: 10, paddingVertical: 8 },
-  headerButtons: { alignItems: 'center', flexDirection: 'row' },
+  headerButtons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+  },
+
+  headerButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+
+  headerTitle: {
+    flexShrink: 1,
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
   heroBadgeRow: { flexDirection: 'row', gap: 8 },
   heroContainer: { height: 320, position: 'relative' },
   heroImage: { height: '100%', width: '100%' },
