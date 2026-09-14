@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -22,7 +21,6 @@ import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
 
-const ENDPOINT_SECRET = 'dragon';
 const ACCESS_KEY = 'starvault_access';
 
 const THEMES: { name: ThemeName; label: string; color: string; bg: string }[] =
@@ -37,79 +35,35 @@ const THEMES: { name: ThemeName; label: string; color: string; bg: string }[] =
     },
   ];
 
-type EndpointStatus = 'idle' | 'connected' | 'unreachable';
-
 const SettingsScreen = () => {
   const { theme, themeName, setTheme } = useTheme();
   const dispatch = useAppDispatch();
   const isUnlocked = useAppSelector(state => state.access.isUnlocked);
   const currentSpace = isUnlocked ? 'private' : 'public';
 
-  const [endpointValue, setEndpointValue] = useState('');
-  const [endpointStatus, setEndpointStatus] = useState<EndpointStatus>('idle');
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ─── Developer options reveal ─────────────────────────────
+  // ─── 5-tap unlock on version row ─────────────────────────
   const [devTapCount, setDevTapCount] = useState(0);
-  const [devOptionsVisible, setDevOptionsVisible] = useState(false);
 
   const handleVersionTap = () => {
-    // Already visible or unlocked — nothing to do
-    if (devOptionsVisible || isUnlocked) return;
+    if (isUnlocked) return;
     const next = devTapCount + 1;
     if (next >= DEVELOPER_OPTIONS_TAP_COUNT) {
-      setDevOptionsVisible(true);
       setDevTapCount(0);
+      dispatch(setUnlocked(true));
+      StorageService.set(ACCESS_KEY, true);
     } else {
       setDevTapCount(next);
     }
   };
 
-  const handleApplyEndpoint = () => {
-    const trimmed = endpointValue.trim();
-    if (trimmed === '') {
-      setEndpointStatus('idle');
-      dispatch(setUnlocked(false));
-      StorageService.set(ACCESS_KEY, false);
-      return;
-    }
-    if (trimmed === ENDPOINT_SECRET) {
-      setEndpointStatus('connected');
-      dispatch(setUnlocked(true));
-      StorageService.set(ACCESS_KEY, true);
-      // Hide developer options once unlocked — no longer needed
-      setDevOptionsVisible(false);
-      setDevTapCount(0);
-    } else {
-      setEndpointStatus('unreachable');
-      dispatch(setUnlocked(false));
-      StorageService.set(ACCESS_KEY, false);
-    }
-  };
-
-  const handleReset = () => {
-    Alert.alert('Reset endpoint', 'This will disconnect the content feed.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reset',
-        style: 'destructive',
-        onPress: () => {
-          setEndpointValue('');
-          setEndpointStatus('idle');
-          dispatch(setUnlocked(false));
-          StorageService.set(ACCESS_KEY, false);
-        },
-      },
-    ]);
-  };
-
   const handleSwitchToPublic = () => {
     dispatch(setUnlocked(false));
     StorageService.set(ACCESS_KEY, false);
-    setEndpointStatus('idle');
-    setEndpointValue('');
+    setDevTapCount(0);
   };
 
   const handleExport = async () => {
@@ -158,12 +112,10 @@ const SettingsScreen = () => {
     try {
       setImporting(true);
 
-      // Step 1: Pick file
       let localUri: string;
       try {
         localUri = await ImportService.pickFile();
       } catch (e: any) {
-        // User cancelled picker — not an error
         if (
           e?.code === 'DOCUMENT_PICKER_CANCELED' ||
           e?.message?.includes('cancel')
@@ -173,10 +125,7 @@ const SettingsScreen = () => {
         throw e;
       }
 
-      // Step 2: Read and validate
       const data = await ImportService.readAndValidate(localUri);
-
-      // Step 3: Confirm with summary
       const { tables } = data;
       Alert.alert(
         'Import Data',
@@ -268,22 +217,6 @@ const SettingsScreen = () => {
   };
 
   const isBusy = exporting || importing || deleting;
-
-  const statusLabel: Record<EndpointStatus, string> = {
-    idle: 'Not configured',
-    connected: 'Connected',
-    unreachable: 'Unreachable',
-  };
-  const statusColor: Record<EndpointStatus, string> = {
-    idle: theme.text.muted,
-    connected: theme.status.success,
-    unreachable: theme.status.error,
-  };
-  const statusDot: Record<EndpointStatus, string> = {
-    idle: '○',
-    connected: '●',
-    unreachable: '●',
-  };
 
   return (
     <ScrollView
@@ -522,7 +455,7 @@ const SettingsScreen = () => {
           { backgroundColor: theme.surface, borderColor: theme.border },
         ]}
       >
-        {/* Version row — tap target for developer options reveal */}
+        {/* Version row — silent tap target for private mode unlock */}
         <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
           <View style={styles.aboutRow}>
             <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
@@ -534,112 +467,6 @@ const SettingsScreen = () => {
           </View>
         </TouchableOpacity>
       </View>
-
-      {/* ── DEVELOPER OPTIONS — revealed by 5 taps on version ── */}
-      {devOptionsVisible && !isUnlocked && (
-        <>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: theme.text.secondary, marginTop: 28 },
-            ]}
-          >
-            DEVELOPER OPTIONS
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-            ]}
-          >
-            <Text style={[styles.devLabel, { color: theme.text.primary }]}>
-              Content delivery endpoint
-            </Text>
-            <Text style={[styles.devDesc, { color: theme.text.muted }]}>
-              Base URL used to resolve media assets and catalogue feeds. Contact
-              support to obtain your organisation's endpoint.
-            </Text>
-            <TextInput
-              style={[
-                styles.endpointInput,
-                {
-                  backgroundColor: theme.background,
-                  borderColor:
-                    endpointStatus === 'connected'
-                      ? theme.status.success
-                      : endpointStatus === 'unreachable'
-                      ? theme.status.error
-                      : theme.border,
-                  color: theme.text.primary,
-                },
-              ]}
-              value={endpointValue}
-              onChangeText={setEndpointValue}
-              placeholder="https://cdn.example.com/v1/feed"
-              placeholderTextColor={theme.text.muted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              keyboardType="url"
-              returnKeyType="done"
-              onSubmitEditing={handleApplyEndpoint}
-            />
-            <View style={styles.statusRow}>
-              <View style={styles.statusLeft}>
-                <Text
-                  style={[
-                    styles.statusDot,
-                    { color: statusColor[endpointStatus] },
-                  ]}
-                >
-                  {statusDot[endpointStatus]}
-                </Text>
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: statusColor[endpointStatus] },
-                  ]}
-                >
-                  {statusLabel[endpointStatus]}
-                </Text>
-              </View>
-              <View style={styles.actionButtons}>
-                {endpointStatus === 'connected' && (
-                  <TouchableOpacity
-                    style={[
-                      styles.actionBtn,
-                      { borderColor: theme.status.error },
-                    ]}
-                    onPress={handleReset}
-                  >
-                    <Text
-                      style={[
-                        styles.actionBtnText,
-                        { color: theme.status.error },
-                      ]}
-                    >
-                      Reset
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.actionBtn, { borderColor: theme.primary }]}
-                  onPress={handleApplyEndpoint}
-                >
-                  <Text
-                    style={[styles.actionBtnText, { color: theme.primary }]}
-                  >
-                    Apply
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <Text style={[styles.versionNote, { color: theme.text.muted }]}>
-              API version: v1 · Build a3f9c12
-            </Text>
-          </View>
-        </>
-      )}
 
       {/* ── Current Theme Info ────────────────────────── */}
       <View
@@ -667,14 +494,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   aboutValue: { fontSize: 14, fontWeight: '500' },
-  actionBtn: {
-    borderRadius: 6,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-  },
-  actionBtnText: { fontSize: 13, fontWeight: '600' },
-  actionButtons: { flexDirection: 'row', gap: 8 },
   actionFullBtn: {
     alignItems: 'center',
     borderRadius: 10,
@@ -695,18 +514,7 @@ const styles = StyleSheet.create({
   content: { padding: 20 },
   dataDesc: { fontSize: 12, lineHeight: 18, marginBottom: 10 },
   dataLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  devDesc: { fontSize: 12, lineHeight: 18, marginBottom: 12 },
-  devLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
   divider: { height: 1, marginVertical: 16 },
-  endpointInput: {
-    borderRadius: 8,
-    borderWidth: 1,
-    fontFamily: 'Courier',
-    fontSize: 13,
-    marginBottom: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
   infoBox: { borderRadius: 10, borderWidth: 1, marginTop: 24, padding: 14 },
   infoText: { fontSize: 14, textAlign: 'center' },
   infoValue: { fontWeight: '700' },
@@ -727,15 +535,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
-  statusDot: { fontSize: 10 },
-  statusLeft: { alignItems: 'center', flexDirection: 'row', gap: 6 },
-  statusRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  statusText: { fontSize: 12, fontWeight: '600' },
   switchBtn: {
     alignItems: 'center',
     borderRadius: 8,
@@ -757,7 +556,6 @@ const styles = StyleSheet.create({
   },
   themeLabel: { flex: 1, fontSize: 16 },
   themeList: { gap: 12 },
-  versionNote: { fontSize: 11, marginTop: 2 },
 });
 
 export default SettingsScreen;
