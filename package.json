@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "android": "react-native run-android",
+    "android:aab": "cd android && ./gradlew clean && ./gradlew bundleRelease",
     "android:apk": "cd android && ./gradlew clean && ./gradlew assembleRelease",
     "android:clean": "cd android && ./gradlew clean",
     "export-src": "node scripts/copy-src.js",
