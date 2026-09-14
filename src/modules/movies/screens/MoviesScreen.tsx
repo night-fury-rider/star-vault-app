@@ -192,6 +192,9 @@ const MoviesScreen = () => {
           onRefresh={() =>
             dispatch(fetchAllMovies(isUnlocked ? 'private' : 'public'))
           }
+          columnWrapperStyle={
+            viewMode === 'card' ? styles.columnWrapper : undefined
+          }
         />
       </Animated.View>
 
@@ -239,6 +242,10 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 100, paddingTop: 4 },
   emptyList: { flexGrow: 1 },
   separator: { height: 4 },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
 });
 
 export default MoviesScreen;

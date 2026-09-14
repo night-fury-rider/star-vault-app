@@ -233,7 +233,8 @@ const styles = StyleSheet.create({
   emptyList: { flexGrow: 1 },
   separator: { height: 4 },
   columnWrapper: {
-    paddingHorizontal: 10, // aligns with the 16px container padding minus card margin
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
   },
 });
 
