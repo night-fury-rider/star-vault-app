@@ -112,13 +112,13 @@ npm install
 ### Create the dev build
 
 ```
-npm run testmode
+npm run mode:sandbox
 ```
 
 ### Create the prod build
 
 ```
-npm run prodmode
+npm run mode:prod
 ```
 
 ### Install the app
