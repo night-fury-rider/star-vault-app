@@ -127,7 +127,7 @@ npm run mode:prod
 npm run android
 ```
 
-### Copy Source Files to build_src
+### Export Source Files to build_src
 
 ```
 npm run export-src
