@@ -8,7 +8,7 @@
     "android:aab": "cd android && ./gradlew clean && ./gradlew bundleRelease",
     "android:apk": "cd android && ./gradlew clean && ./gradlew assembleRelease",
     "android:clean": "cd android && ./gradlew clean",
-    "export-src": "node scripts/copy-src.js",
+    "export-src": "node scripts/export-src.js",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "mode:prod": "node scripts/switch-app-mode.js prod",

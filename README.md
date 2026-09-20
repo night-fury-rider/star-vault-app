@@ -127,6 +127,12 @@ npm run mode:prod
 npm run android
 ```
 
+### Copy Source Files to build_src
+
+```
+npm run export-src
+```
+
 ### Enable Wireless hot reload on Mobile
 
 - Make sure that mobile with USB debugging enabled
