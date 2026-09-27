@@ -83,8 +83,8 @@ const SettingsScreen = () => {
 
   const handleDeleteAll = () => {
     Alert.alert(
-      isUnlocked ? 'Delete All Private Data' : 'Delete All Data',
-      `This will permanently delete all stars, movies, and links${
+      isUnlocked ? 'Remove All Private Data' : 'Remove All Data',
+      `This will permanently remove all stars, movies, and links${
         isUnlocked ? ' in Private Mode' : ''
       }. This cannot be undone.${
         isUnlocked
@@ -94,7 +94,7 @@ const SettingsScreen = () => {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete Everything',
+          text: 'Remove Everything',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -104,9 +104,9 @@ const SettingsScreen = () => {
                 dispatch(fetchAllStars(currentSpace)),
                 dispatch(fetchAllMovies(currentSpace)),
               ]);
-              showSuccess('All data has been deleted.');
+              showSuccess('All data has been removed.');
             } catch (e: any) {
-              showError(e?.message ?? 'Could not delete data.');
+              showError(e?.message ?? 'Could not remove data.');
             } finally {
               setDeleting(false);
             }
@@ -124,40 +124,13 @@ const SettingsScreen = () => {
         return;
       }
       setExporting(true);
-      Alert.alert(
-        'Export Data',
-        `This will export:\n\n• ${summary.stars} star${
-          summary.stars !== 1 ? 's' : ''
-        }\n• ${summary.movies} movie${summary.movies !== 1 ? 's' : ''}\n• ${
-          summary.links
-        } star-movie link${
-          summary.links !== 1 ? 's' : ''
-        }\n\nNote: Media files are not included.`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => setExporting(false),
-          },
-          {
-            text: 'Export',
-            onPress: async () => {
-              try {
-                await exportAll();
-              } catch (e: any) {
-                showError(
-                  'Export Failed',
-                  e?.message ?? 'Something went wrong.',
-                );
-              } finally {
-                setExporting(false);
-              }
-            },
-          },
-        ],
+      await exportAll();
+      showSuccess(
+        `Exported ${summary.stars} stars and ${summary.movies} movies successfully`,
       );
     } catch (e: any) {
       showError(e?.message ?? 'Could not prepare export.');
+    } finally {
       setExporting(false);
     }
   };
@@ -173,42 +146,16 @@ const SettingsScreen = () => {
         );
         return;
       }
-      Alert.alert(
-        'Export Media',
-        `This will export ${count} image${
-          count !== 1 ? 's' : ''
-        } as a ZIP file.`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => setExportingMedia(false),
-          },
-          {
-            text: 'Export',
-            onPress: async () => {
-              try {
-                await exportMedia();
-              } catch (e: any) {
-                if (e?.message === 'NO_MEDIA') {
-                  showError('No images found to export.');
-                } else {
-                  showError(
-                    'Export Failed',
-                    e?.message ?? 'Something went wrong.',
-                  );
-                }
-              } finally {
-                setExportingMedia(false);
-              }
-            },
-          },
-        ],
-      );
+      await exportMedia();
+      showSuccess(`Exported media files successfully.`);
     } catch (e: any) {
-      showError(`Error: Could not prepare media export: ${e}`);
+      if (e?.message === 'NO_MEDIA') {
+        showError('No images found to export.');
+      } else {
+        showError('Export Failed', e?.message ?? 'Something went wrong.');
+      }
     } finally {
-      setExportingMedia(false); // ← this is the fix — always fires
+      setExportingMedia(false);
     }
   };
 
