@@ -25,6 +25,7 @@ import {
   addMedia as addMediaThunk,
   deleteMediaBatch as deleteMediaBatchThunk,
 } from '../../../store/thunks/gallery-thunks';
+import { copyStarGalleryImage } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -50,7 +51,6 @@ const StarGalleryScreen = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Load gallery on mount
   useEffect(() => {
     dispatch(fetchGallery(star.id));
   }, [star.id, dispatch]);
@@ -81,11 +81,10 @@ const StarGalleryScreen = () => {
           launchImageLibrary(
             { mediaType: 'photo', quality: 0.9, selectionLimit: 10 },
             res => {
-              res.assets?.forEach(asset => {
-                if (asset.uri) {
-                  addMedia(asset.uri, 'image');
-                }
-              });
+              const uris = res.assets
+                ?.map(a => a.uri)
+                .filter(Boolean) as string[];
+              if (uris?.length) processAssets(uris, 'image');
             },
           ),
       },
@@ -93,25 +92,47 @@ const StarGalleryScreen = () => {
         text: '📹 Gallery — Videos',
         onPress: () =>
           launchImageLibrary({ mediaType: 'video', selectionLimit: 5 }, res => {
-            res.assets?.forEach(asset => {
-              if (asset.uri) {
-                addMedia(asset.uri, 'video');
-              }
-            });
+            const uris = res.assets
+              ?.map(a => a.uri)
+              .filter(Boolean) as string[];
+            if (uris?.length) processAssets(uris, 'video');
           }),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
-  const addMedia = (uri: string, type: 'image' | 'video') => {
-    const newMedia: GalleryMedia = {
-      id: uuidv4(),
-      uri,
-      type,
-      createdAt: new Date().toISOString(),
-    };
-    dispatch(addMediaThunk({ starId: star.id, media: newMedia }));
+  // ─── processAssets ────────────────────────────────────────
+  // Sequential processing — avoids race condition on ensureDir
+  // when multiple images are selected at once.
+  const processAssets = async (uris: string[], type: 'image' | 'video') => {
+    for (const uri of uris) {
+      await addMedia(uri, type);
+    }
+  };
+
+  // ─── addMedia ─────────────────────────────────────────────
+  // Copies to internal storage first — never stores content:// in DB.
+  // Videos are not copied — URI stored as-is for now.
+  const addMedia = async (uri: string, type: 'image' | 'video') => {
+    try {
+      let stableUri = uri;
+      if (type === 'image') {
+        const internalPath = await copyStarGalleryImage(uri, star.id);
+        stableUri = internalPath.startsWith('file://')
+          ? internalPath
+          : `file://${internalPath}`;
+      }
+      const newMedia: GalleryMedia = {
+        id: uuidv4(),
+        uri: stableUri,
+        type,
+        createdAt: new Date().toISOString(),
+      };
+      dispatch(addMediaThunk({ starId: star.id, media: newMedia }));
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to save media.');
+    }
   };
 
   const handleMediaPress = useCallback(

@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { version as APP_VERSION } from '../../../../package.json';
 import { useTheme } from '../../../theme';
 import { ThemeName } from '../../../theme';
@@ -15,8 +16,19 @@ import { Typography } from '../../../theme';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { setUnlocked } from '../../../store/slices/access-slice';
 import StorageService from '../../../services/StorageService';
-import { ExportService } from '../../../services/ExportService';
-import { ImportService } from '../../../services/ImportService';
+import {
+  deleteAll,
+  exportAll,
+  exportMedia,
+  getMediaCount,
+  getSummary,
+} from '../../../services/ExportService';
+import {
+  importAll,
+  importMedia,
+  pickFile,
+  readAndValidate,
+} from '../../../services/ImportService';
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
@@ -42,7 +54,9 @@ const SettingsScreen = () => {
   const currentSpace = isUnlocked ? 'private' : 'public';
 
   const [exporting, setExporting] = useState(false);
+  const [exportingMedia, setExportingMedia] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importingMedia, setImportingMedia] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // ─── 5-tap unlock on version row ─────────────────────────
@@ -66,10 +80,45 @@ const SettingsScreen = () => {
     setDevTapCount(0);
   };
 
+  const handleDeleteAll = () => {
+    Alert.alert(
+      isUnlocked ? 'Delete All Private Data' : 'Delete All Data',
+      `This will permanently delete all stars, movies, and links${
+        isUnlocked ? ' in Private Mode' : ''
+      }. This cannot be undone.${
+        isUnlocked
+          ? '\n\nExport your data first if you want to restore it later.'
+          : ''
+      }`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await deleteAll(currentSpace);
+              await Promise.all([
+                dispatch(fetchAllStars(currentSpace)),
+                dispatch(fetchAllMovies(currentSpace)),
+              ]);
+              Alert.alert('Done', 'All data has been deleted.');
+            } catch (e: any) {
+              Alert.alert('Error', e?.message ?? 'Could not delete data.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleExport = async () => {
     try {
       setExporting(true);
-      const summary = await ExportService.getSummary(currentSpace);
+      const summary = await getSummary();
       Alert.alert(
         'Export Data',
         `This will export:\n\n• ${summary.stars} star${
@@ -89,7 +138,7 @@ const SettingsScreen = () => {
             text: 'Export',
             onPress: async () => {
               try {
-                await ExportService.exportAll(currentSpace);
+                await exportAll();
               } catch (e: any) {
                 Alert.alert(
                   'Export Failed',
@@ -108,13 +157,59 @@ const SettingsScreen = () => {
     }
   };
 
+  const handleExportMedia = async () => {
+    try {
+      setExportingMedia(true);
+      const count = await getMediaCount();
+      if (count === 0) {
+        Alert.alert('No Media', 'No images found to export.');
+        return;
+      }
+      Alert.alert(
+        'Export Media',
+        `This will export ${count} image${
+          count !== 1 ? 's' : ''
+        } as a ZIP file.`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => setExportingMedia(false),
+          },
+          {
+            text: 'Export',
+            onPress: async () => {
+              try {
+                await exportMedia();
+              } catch (e: any) {
+                if (e?.message === 'NO_MEDIA') {
+                  Alert.alert('No Media', 'No images found to export.');
+                } else {
+                  Alert.alert(
+                    'Export Failed',
+                    e?.message ?? 'Something went wrong.',
+                  );
+                }
+              } finally {
+                setExportingMedia(false);
+              }
+            },
+          },
+        ],
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not prepare media export.');
+      setExportingMedia(false);
+    }
+  };
+
   const handleImport = async () => {
     try {
       setImporting(true);
 
       let localUri: string;
       try {
-        localUri = await ImportService.pickFile();
+        localUri = await pickFile();
       } catch (e: any) {
         if (
           e?.code === 'DOCUMENT_PICKER_CANCELED' ||
@@ -125,7 +220,7 @@ const SettingsScreen = () => {
         throw e;
       }
 
-      const data = await ImportService.readAndValidate(localUri);
+      const data = await readAndValidate(localUri);
       const { tables } = data;
       Alert.alert(
         'Import Data',
@@ -146,10 +241,7 @@ const SettingsScreen = () => {
             text: 'Import',
             onPress: async () => {
               try {
-                const result = await ImportService.importAll(
-                  data,
-                  currentSpace,
-                );
+                const result = await importAll(data, currentSpace);
                 await Promise.all([
                   dispatch(fetchAllStars(currentSpace)),
                   dispatch(fetchAllMovies(currentSpace)),
@@ -181,308 +273,373 @@ const SettingsScreen = () => {
     }
   };
 
-  const handleDeleteAll = () => {
-    Alert.alert(
-      isUnlocked ? 'Delete All Private Data' : 'Delete All Data',
-      `This will permanently delete all stars, movies, and links${
-        isUnlocked ? ' in Private Mode' : ''
-      }. This cannot be undone.${
-        isUnlocked
-          ? '\n\nExport your data first if you want to restore it later.'
-          : ''
-      }`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeleting(true);
-              await ExportService.deleteAll(currentSpace);
-              await Promise.all([
-                dispatch(fetchAllStars(currentSpace)),
-                dispatch(fetchAllMovies(currentSpace)),
-              ]);
-              Alert.alert('Done', 'All data has been deleted.');
-            } catch (e: any) {
-              Alert.alert('Error', e?.message ?? 'Could not delete data.');
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleImportMedia = async () => {
+    try {
+      setImportingMedia(true);
+      const result = await importMedia();
+      await Promise.all([
+        dispatch(fetchAllStars(currentSpace)),
+        dispatch(fetchAllMovies(currentSpace)),
+      ]);
+      Alert.alert(
+        'Import Complete',
+        `Imported ${result.imported} image${result.imported !== 1 ? 's' : ''}${
+          result.skipped > 0 ? `, skipped ${result.skipped}` : ''
+        }.`,
+      );
+    } catch (e: any) {
+      if (
+        e?.code === 'DOCUMENT_PICKER_CANCELED' ||
+        e?.message?.includes('cancel')
+      ) {
+        return;
+      }
+      Alert.alert('Import Failed', e?.message ?? 'Something went wrong.');
+    } finally {
+      setImportingMedia(false);
+    }
   };
 
-  const isBusy = exporting || importing || deleting;
+  const isBusy =
+    exporting || exportingMedia || importing || importingMedia || deleting;
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.content}
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top']}
     >
-      {/* ── APPEARANCE ───────────────────────────────── */}
-      <Text style={[styles.sectionTitle, { color: theme.text.secondary }]}>
-        APPEARANCE
-      </Text>
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.content}
+      >
+        {/* ── APPEARANCE ───────────────────────────────── */}
+        <Text style={[styles.sectionTitle, { color: theme.text.secondary }]}>
+          APPEARANCE
+        </Text>
 
-      <View style={styles.themeList}>
-        {THEMES.map(t => {
-          const isSelected = themeName === t.name;
-          return (
-            <TouchableOpacity
-              key={t.name}
-              onPress={() => setTheme(t.name)}
-              style={[
-                styles.themeCard,
-                {
-                  backgroundColor: t.bg,
-                  borderColor: isSelected ? t.color : theme.border,
-                  borderWidth: isSelected ? 2 : 1,
-                },
-              ]}
-            >
-              <View style={[styles.colorDot, { backgroundColor: t.color }]} />
-              <Text
+        <View style={styles.themeList}>
+          {THEMES.map(t => {
+            const isSelected = themeName === t.name;
+            return (
+              <TouchableOpacity
+                key={t.name}
+                onPress={() => setTheme(t.name)}
                 style={[
-                  styles.themeLabel,
+                  styles.themeCard,
                   {
-                    color: isSelected ? t.color : theme.text.primary,
-                    fontWeight: isSelected ? '700' : '400',
+                    backgroundColor: t.bg,
+                    borderColor: isSelected ? t.color : theme.border,
+                    borderWidth: isSelected ? 2 : 1,
                   },
                 ]}
               >
-                {t.label}
-              </Text>
-              {isSelected && (
-                <View style={[styles.checkmark, { backgroundColor: t.color }]}>
-                  <Text style={styles.checkmarkText}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* ── MODE — Private Mode only ─────────────────── */}
-      {isUnlocked && (
-        <>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: theme.text.secondary, marginTop: 28 },
-            ]}
-          >
-            MODE
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-            ]}
-          >
-            <View style={styles.modeRow}>
-              <View style={styles.modeInfo}>
-                <Text style={[styles.modeLabel, { color: theme.text.primary }]}>
-                  🔓 Private Mode
-                </Text>
-                <Text style={[styles.modeDesc, { color: theme.text.muted }]}>
-                  All features are available.
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.modeBadge,
-                  { backgroundColor: theme.status.success + '22' },
-                ]}
-              >
+                <View style={[styles.colorDot, { backgroundColor: t.color }]} />
                 <Text
                   style={[
-                    styles.modeBadgeText,
-                    { color: theme.status.success },
+                    styles.themeLabel,
+                    {
+                      color: isSelected ? t.color : theme.text.primary,
+                      fontWeight: isSelected ? '700' : '400',
+                    },
                   ]}
                 >
-                  Private
+                  {t.label}
                 </Text>
+                {isSelected && (
+                  <View
+                    style={[styles.checkmark, { backgroundColor: t.color }]}
+                  >
+                    <Text style={styles.checkmarkText}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* ── MODE — Private Mode only ─────────────────── */}
+        {isUnlocked && (
+          <>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: theme.text.secondary, marginTop: 28 },
+              ]}
+            >
+              MODE
+            </Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}
+            >
+              <View style={styles.modeRow}>
+                <View style={styles.modeInfo}>
+                  <Text
+                    style={[styles.modeLabel, { color: theme.text.primary }]}
+                  >
+                    🔓 Private Mode
+                  </Text>
+                  <Text style={[styles.modeDesc, { color: theme.text.muted }]}>
+                    All features are available.
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.modeBadge,
+                    { backgroundColor: theme.status.success + '22' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modeBadgeText,
+                      { color: theme.status.success },
+                    ]}
+                  >
+                    Private
+                  </Text>
+                </View>
               </View>
-            </View>
-            <TouchableOpacity
-              style={[styles.switchBtn, { borderColor: theme.status.error }]}
-              onPress={handleSwitchToPublic}
-            >
-              <Text
-                style={[styles.switchBtnText, { color: theme.status.error }]}
+              <TouchableOpacity
+                style={[styles.switchBtn, { borderColor: theme.status.error }]}
+                onPress={handleSwitchToPublic}
               >
-                Lock This Device
+                <Text
+                  style={[styles.switchBtnText, { color: theme.status.error }]}
+                >
+                  Lock This Device
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* ── DATA (Export/Import) — Private Mode only ──── */}
+        {isUnlocked && (
+          <>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: theme.text.secondary, marginTop: 28 },
+              ]}
+            >
+              DATA
+            </Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}
+            >
+              {/* Export Data */}
+              <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+                Export Data
               </Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
+              <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+                Export all stars, movies, and their links as a JSON file. Media
+                files are not included.
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.actionFullBtn,
+                  {
+                    backgroundColor: exporting
+                      ? theme.primaryLight
+                      : theme.primary,
+                  },
+                ]}
+                onPress={handleExport}
+                disabled={isBusy}
+              >
+                {exporting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.actionFullBtnText}>⬆ Export JSON</Text>
+                )}
+              </TouchableOpacity>
 
-      {/* ── DATA (Export/Import) — Private Mode only ──── */}
-      {isUnlocked && (
-        <>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: theme.text.secondary, marginTop: 28 },
-            ]}
-          >
-            DATA
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-            ]}
-          >
-            {/* Export */}
-            <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-              Export Data
-            </Text>
-            <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-              Export all stars, movies, and their links as a JSON file. Media
-              files are not included.
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.actionFullBtn,
-                {
-                  backgroundColor: exporting
-                    ? theme.primaryLight
-                    : theme.primary,
-                },
-              ]}
-              onPress={handleExport}
-              disabled={isBusy}
-            >
-              {exporting ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.actionFullBtnText}>⬆ Export JSON</Text>
-              )}
-            </TouchableOpacity>
+              <View
+                style={[styles.divider, { backgroundColor: theme.border }]}
+              />
 
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              {/* Export Media */}
+              <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+                Export Media
+              </Text>
+              <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+                Export all photos and videos as a ZIP file.
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.actionFullBtn,
+                  {
+                    backgroundColor: exportingMedia
+                      ? theme.primaryLight
+                      : theme.primary,
+                  },
+                ]}
+                onPress={handleExportMedia}
+                disabled={isBusy}
+              >
+                {exportingMedia ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.actionFullBtnText}>⬆ Export Media</Text>
+                )}
+              </TouchableOpacity>
 
-            {/* Import */}
-            <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-              Import Data
-            </Text>
-            <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-              Import a StarVault JSON export. Existing records with matching IDs
-              will be updated; new records will be added.
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.actionFullBtn,
-                {
-                  backgroundColor: importing
-                    ? theme.primaryLight
-                    : theme.primary,
-                },
-              ]}
-              onPress={handleImport}
-              disabled={isBusy}
-            >
-              {importing ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.actionFullBtnText}>⬇ Import JSON</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
+              <View
+                style={[styles.divider, { backgroundColor: theme.border }]}
+              />
 
-      {/* ── DELETE — available in both modes ──────────── */}
-      <Text
-        style={[
-          styles.sectionTitle,
-          { color: theme.text.secondary, marginTop: 28 },
-        ]}
-      >
-        {isUnlocked ? 'DANGER ZONE' : 'RESET'}
-      </Text>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
-        <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-          Delete All {isUnlocked ? 'Private ' : ''}Data
-        </Text>
-        <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-          Permanently removes all stars, movies, and links.
-          {isUnlocked ? ' Export first if you want to restore later.' : ''}
-        </Text>
-        <TouchableOpacity
+              {/* Import Data */}
+              <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+                Import Data
+              </Text>
+              <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+                Import a StarVault JSON export. Existing records with matching
+                IDs will be updated; new records will be added.
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.actionFullBtn,
+                  {
+                    backgroundColor: importing
+                      ? theme.primaryLight
+                      : theme.primary,
+                  },
+                ]}
+                onPress={handleImport}
+                disabled={isBusy}
+              >
+                {importing ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.actionFullBtnText}>⬇ Import JSON</Text>
+                )}
+              </TouchableOpacity>
+
+              <View
+                style={[styles.divider, { backgroundColor: theme.border }]}
+              />
+
+              {/* Import Media */}
+              <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+                Import Media
+              </Text>
+              <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+                Import a StarVault media ZIP. Images will be matched to existing
+                stars and movies automatically.
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.actionFullBtn,
+                  {
+                    backgroundColor: importingMedia
+                      ? theme.primaryLight
+                      : theme.primary,
+                  },
+                ]}
+                onPress={handleImportMedia}
+                disabled={isBusy}
+              >
+                {importingMedia ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.actionFullBtnText}>⬇ Import Media</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* ── DELETE — available in both modes ──────────── */}
+        <Text
           style={[
-            styles.actionFullBtn,
-            {
-              backgroundColor: deleting
-                ? theme.status.error + '88'
-                : theme.status.error,
-            },
+            styles.sectionTitle,
+            { color: theme.text.secondary, marginTop: 28 },
           ]}
-          onPress={handleDeleteAll}
-          disabled={isBusy}
         >
-          {deleting ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={styles.actionFullBtnText}>🗑 Delete All Data</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* ── ABOUT ─────────────────────────────────────── */}
-      <Text
-        style={[
-          styles.sectionTitle,
-          { color: theme.text.secondary, marginTop: 28 },
-        ]}
-      >
-        ABOUT
-      </Text>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
-        {/* Version row — silent tap target for private mode unlock */}
-        <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
-          <View style={styles.aboutRow}>
-            <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
-              Version
-            </Text>
-            <Text style={[styles.aboutValue, { color: theme.text.primary }]}>
-              {APP_VERSION}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Current Theme Info ────────────────────────── */}
-      <View
-        style={[
-          styles.infoBox,
-          { backgroundColor: theme.card, borderColor: theme.border },
-        ]}
-      >
-        <Text style={[styles.infoText, { color: theme.text.secondary }]}>
-          Current theme:{' '}
-          <Text style={[styles.infoValue, { color: theme.primary }]}>
-            {THEMES.find(t => t.name === themeName)?.label}
-          </Text>
+          {isUnlocked ? 'DANGER ZONE' : 'RESET'}
         </Text>
-      </View>
-    </ScrollView>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
+          <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
+            Delete All {isUnlocked ? 'Private ' : ''}Data
+          </Text>
+          <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
+            Permanently removes all stars, movies, and links.
+            {isUnlocked ? ' Export first if you want to restore later.' : ''}
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.actionFullBtn,
+              {
+                backgroundColor: deleting
+                  ? theme.status.error + '88'
+                  : theme.status.error,
+              },
+            ]}
+            onPress={handleDeleteAll}
+            disabled={isBusy}
+          >
+            {deleting ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.actionFullBtnText}>🗑 Delete All Data</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* ── ABOUT ─────────────────────────────────────── */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: theme.text.secondary, marginTop: 28 },
+          ]}
+        >
+          ABOUT
+        </Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
+          {/* Version row — silent tap target for private mode unlock */}
+          <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
+            <View style={styles.aboutRow}>
+              <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
+                Version
+              </Text>
+              <Text style={[styles.aboutValue, { color: theme.text.primary }]}>
+                {APP_VERSION}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Current Theme Info ────────────────────────── */}
+        <View
+          style={[
+            styles.infoBox,
+            { backgroundColor: theme.card, borderColor: theme.border },
+          ]}
+        >
+          <Text style={[styles.infoText, { color: theme.text.secondary }]}>
+            Current theme:{' '}
+            <Text style={[styles.infoValue, { color: theme.primary }]}>
+              {THEMES.find(t => t.name === themeName)?.label}
+            </Text>
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -510,6 +667,7 @@ const styles = StyleSheet.create({
   },
   checkmarkText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   colorDot: { borderRadius: 16, height: 32, marginRight: 14, width: 32 },
+  safeArea: { flex: 1 },
   container: { flex: 1 },
   content: { padding: 20 },
   dataDesc: { fontSize: 12, lineHeight: 18, marginBottom: 10 },

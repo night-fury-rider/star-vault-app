@@ -25,6 +25,7 @@ import {
   addMovieMedia,
   deleteMovieMediaBatch,
 } from '../../../store/thunks/movie-gallery-thunks';
+import { copyMovieGalleryImage } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -54,6 +55,39 @@ const MovieGalleryScreen = () => {
     dispatch(fetchMovieGallery(movie.id));
   }, [movie.id, dispatch]);
 
+  // ─── addMedia ─────────────────────────────────────────────
+  // Copies to internal storage first — never stores content:// in DB.
+  // Videos are not copied — stored as-is for now.
+  const addMedia = async (uri: string, type: 'image' | 'video') => {
+    try {
+      let stableUri = uri;
+      if (type === 'image') {
+        const internalPath = await copyMovieGalleryImage(uri, movie.id);
+        stableUri = internalPath.startsWith('file://')
+          ? internalPath
+          : `file://${internalPath}`;
+      }
+      const newMedia: GalleryMedia = {
+        id: uuidv4(),
+        uri: stableUri,
+        type,
+        createdAt: new Date().toISOString(),
+      };
+      dispatch(addMovieMedia({ movieId: movie.id, media: newMedia }));
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to save media.');
+    }
+  };
+
+  // ─── processAssets ────────────────────────────────────────
+  // Sequential processing — avoids race condition on ensureDir
+  // when multiple images are selected at once.
+  const processAssets = async (uris: string[], type: 'image' | 'video') => {
+    for (const uri of uris) {
+      await addMedia(uri, type);
+    }
+  };
+
   const handleAddMedia = () => {
     Alert.alert('Add Media', 'Choose source', [
       {
@@ -80,11 +114,10 @@ const MovieGalleryScreen = () => {
           launchImageLibrary(
             { mediaType: 'photo', quality: 0.9, selectionLimit: 10 },
             res => {
-              res.assets?.forEach(asset => {
-                if (asset.uri) {
-                  addMedia(asset.uri, 'image');
-                }
-              });
+              const uris = res.assets
+                ?.map(a => a.uri)
+                .filter(Boolean) as string[];
+              if (uris?.length) processAssets(uris, 'image');
             },
           ),
       },
@@ -92,25 +125,14 @@ const MovieGalleryScreen = () => {
         text: '📹 Gallery — Videos',
         onPress: () =>
           launchImageLibrary({ mediaType: 'video', selectionLimit: 5 }, res => {
-            res.assets?.forEach(asset => {
-              if (asset.uri) {
-                addMedia(asset.uri, 'video');
-              }
-            });
+            const uris = res.assets
+              ?.map(a => a.uri)
+              .filter(Boolean) as string[];
+            if (uris?.length) processAssets(uris, 'video');
           }),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
-  };
-
-  const addMedia = (uri: string, type: 'image' | 'video') => {
-    const newMedia: GalleryMedia = {
-      id: uuidv4(),
-      uri,
-      type,
-      createdAt: new Date().toISOString(),
-    };
-    dispatch(addMovieMedia({ movieId: movie.id, media: newMedia }));
   };
 
   const handleMediaPress = useCallback(
@@ -206,18 +228,13 @@ const MovieGalleryScreen = () => {
             style={[
               styles.selectionOverlay,
               {
-                backgroundColor: isSelected
-                  ? 'rgba(0,0,0,0.4)'
-                  : 'transparent',
+                backgroundColor: isSelected ? 'rgba(0,0,0,0.4)' : 'transparent',
               },
             ]}
           >
             {isSelected && (
               <View
-                style={[
-                  styles.checkCircle,
-                  { backgroundColor: theme.primary },
-                ]}
+                style={[styles.checkCircle, { backgroundColor: theme.primary }]}
               >
                 <Text style={styles.checkMark}>✓</Text>
               </View>
@@ -252,9 +269,7 @@ const MovieGalleryScreen = () => {
             {selectedIds.size} selected
           </Text>
           <TouchableOpacity onPress={handleDeleteSelected}>
-            <Text
-              style={[styles.toolbarAction, { color: theme.status.error }]}
-            >
+            <Text style={[styles.toolbarAction, { color: theme.status.error }]}>
               Delete
             </Text>
           </TouchableOpacity>
@@ -282,9 +297,7 @@ const MovieGalleryScreen = () => {
           <Text style={[styles.emptyTitle, { color: theme.text.primary }]}>
             No Media Yet
           </Text>
-          <Text
-            style={[styles.emptySubtitle, { color: theme.text.secondary }]}
-          >
+          <Text style={[styles.emptySubtitle, { color: theme.text.secondary }]}>
             Tap + to add photos and videos for {movie.title}
           </Text>
         </View>

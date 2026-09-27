@@ -20,6 +20,7 @@ import BaseDatePicker from '../../../components/BaseDatePicker';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { createStar, updateStar } from '../../../store/thunks/star-thunks';
+import { copyStarProfile } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -35,6 +36,11 @@ const AddStarScreen = () => {
   // ─── Edit mode detection ──────────────────────────────────
   const existingStar = route.params?.star;
   const isEditMode = !!existingStar;
+
+  // ─── Star ID — generated upfront so it's available at pick time
+  // In edit mode we use the existing ID; in create mode we generate
+  // once so the profile copy uses the correct folder.
+  const [starId] = useState<string>(existingStar?.id ?? uuidv4());
 
   // ─── Standard fields — pre-filled in edit mode ────────────
   const [stageName, setStageName] = useState(existingStar?.stageName ?? '');
@@ -67,6 +73,22 @@ const AddStarScreen = () => {
   const isUnlocked = useAppSelector(state => state.access.isUnlocked);
 
   // ─── Image picker ─────────────────────────────────────────
+  // Copies picked image to internal storage immediately — never stores
+  // content:// or camera temp URIs in state or DB.
+  const handlePickedUri = async (uri: string) => {
+    try {
+      const internalPath = await copyStarProfile(uri, starId);
+      // Image component needs file:// prefix for local paths
+      setImagePath(
+        internalPath.startsWith('file://')
+          ? internalPath
+          : `file://${internalPath}`,
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to save image.');
+    }
+  };
+
   const handlePickImage = () => {
     Alert.alert('Select Image', 'Choose image source', [
       {
@@ -74,7 +96,7 @@ const AddStarScreen = () => {
         onPress: () =>
           launchCamera({ mediaType: 'photo', quality: 0.8 }, response => {
             if (response.assets?.[0]?.uri) {
-              setImagePath(response.assets[0].uri);
+              handlePickedUri(response.assets[0].uri);
             }
           }),
       },
@@ -83,7 +105,7 @@ const AddStarScreen = () => {
         onPress: () =>
           launchImageLibrary({ mediaType: 'photo', quality: 0.8 }, response => {
             if (response.assets?.[0]?.uri) {
-              setImagePath(response.assets[0].uri);
+              handlePickedUri(response.assets[0].uri);
             }
           }),
       },
@@ -146,7 +168,7 @@ const AddStarScreen = () => {
           customAttributes: customAttributes.filter(
             attr => attr.key.trim() && attr.value.trim(),
           ),
-          space: existingStar!.space, // immutable — can't move spaces via edit
+          space: existingStar!.space,
           updatedAt: new Date().toISOString(),
         };
 
@@ -161,12 +183,11 @@ const AddStarScreen = () => {
           return;
         }
 
-        // Go back to detail screen with updated star
         navigation.goBack();
       } else {
         // ─── CREATE ───────────────────────────────────────
         const newStar: Star = {
-          id: uuidv4(),
+          id: starId,
           stageName,
           originalName: originalName || undefined,
           countryOfOrigin: countryOfOrigin || undefined,

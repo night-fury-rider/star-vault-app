@@ -19,6 +19,7 @@ import BaseInput from '../../../components/BaseInput';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { createMovie, updateMovie } from '../../../store/thunks/movie-thunks';
+import { copyMovieProfile } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -36,6 +37,11 @@ const AddMovieScreen = () => {
   // ─── Edit mode detection ──────────────────────────────────
   const existingMovie = route.params?.movie;
   const isEditMode = !!existingMovie;
+
+  // ─── Movie ID — generated upfront so it's available at pick time
+  // In edit mode we use the existing ID; in create mode we generate
+  // once so the profile copy uses the correct folder.
+  const [movieId] = useState<string>(existingMovie?.id ?? uuidv4());
 
   const [title, setTitle] = useState(existingMovie?.title ?? '');
   const [year, setYear] = useState(existingMovie?.year?.toString() ?? '');
@@ -58,6 +64,22 @@ const AddMovieScreen = () => {
   const [saving, setSaving] = useState(false);
   const isUnlocked = useAppSelector(state => state.access.isUnlocked);
 
+  // ─── Image picker ─────────────────────────────────────────
+  // Copies picked image to internal storage immediately — never stores
+  // content:// or camera temp URIs in state or DB.
+  const handlePickedUri = async (uri: string) => {
+    try {
+      const internalPath = await copyMovieProfile(uri, movieId);
+      setImagePath(
+        internalPath.startsWith('file://')
+          ? internalPath
+          : `file://${internalPath}`,
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to save image.');
+    }
+  };
+
   const handlePickImage = () => {
     Alert.alert('Select Image', 'Choose image source', [
       {
@@ -65,7 +87,7 @@ const AddMovieScreen = () => {
         onPress: () =>
           launchCamera({ mediaType: 'photo', quality: 0.8 }, response => {
             if (response.assets?.[0]?.uri) {
-              setImagePath(response.assets[0].uri);
+              handlePickedUri(response.assets[0].uri);
             }
           }),
       },
@@ -74,7 +96,7 @@ const AddMovieScreen = () => {
         onPress: () =>
           launchImageLibrary({ mediaType: 'photo', quality: 0.8 }, response => {
             if (response.assets?.[0]?.uri) {
-              setImagePath(response.assets[0].uri);
+              handlePickedUri(response.assets[0].uri);
             }
           }),
       },
@@ -160,7 +182,7 @@ const AddMovieScreen = () => {
       } else {
         // ─── CREATE ───────────────────────────────────────
         const newMovie: Movie = {
-          id: uuidv4(),
+          id: movieId,
           title: title.trim(),
           year: parseInt(year, 10),
           genre: genre.trim() || undefined,
