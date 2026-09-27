@@ -23,6 +23,7 @@ import { createStar, updateStar } from '../../../store/thunks/star-thunks';
 import { copyStarProfile } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { showError } from '../../../utils/toast';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'AddStar'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'AddStar'>;
@@ -85,7 +86,7 @@ const AddStarScreen = () => {
           : `file://${internalPath}`,
       );
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save image.');
+      showError(e?.message ?? 'Failed to save image.');
     }
   };
 
@@ -176,10 +177,7 @@ const AddStarScreen = () => {
         const result = await dispatch(updateStar(updatedStar));
 
         if (updateStar.rejected.match(result)) {
-          Alert.alert(
-            'Error',
-            String(result.payload) ?? 'Failed to update star',
-          );
+          showError(String(result.payload) ?? 'Failed to update star');
           return;
         }
 
@@ -209,14 +207,14 @@ const AddStarScreen = () => {
         const result = await dispatch(createStar(newStar));
 
         if (createStar.rejected.match(result)) {
-          Alert.alert('Error', String(result.payload) ?? 'Failed to save star');
+          showError(String(result.payload) ?? 'Failed to save star');
           return;
         }
 
         navigation.goBack();
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save star');
+      showError(e?.message ?? 'Failed to save star');
     } finally {
       setSaving(false);
     }

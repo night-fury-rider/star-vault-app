@@ -28,6 +28,7 @@ import {
 import { copyMovieGalleryImage } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { showError } from '../../../utils/toast';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'MovieGallery'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'MovieGallery'>;
@@ -75,7 +76,7 @@ const MovieGalleryScreen = () => {
       };
       dispatch(addMovieMedia({ movieId: movie.id, media: newMedia }));
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save media.');
+      showError(e?.message ?? 'Failed to save media.');
     }
   };
 

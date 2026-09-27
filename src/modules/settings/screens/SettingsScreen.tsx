@@ -32,6 +32,7 @@ import {
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
+import { showError, showSuccess } from '../../../utils/toast';
 
 const ACCESS_KEY = 'starvault_access';
 
@@ -103,9 +104,9 @@ const SettingsScreen = () => {
                 dispatch(fetchAllStars(currentSpace)),
                 dispatch(fetchAllMovies(currentSpace)),
               ]);
-              Alert.alert('Done', 'All data has been deleted.');
+              showSuccess('All data has been deleted.');
             } catch (e: any) {
-              Alert.alert('Error', e?.message ?? 'Could not delete data.');
+              showError(e?.message ?? 'Could not delete data.');
             } finally {
               setDeleting(false);
             }
@@ -140,7 +141,7 @@ const SettingsScreen = () => {
               try {
                 await exportAll();
               } catch (e: any) {
-                Alert.alert(
+                showError(
                   'Export Failed',
                   e?.message ?? 'Something went wrong.',
                 );
@@ -152,7 +153,7 @@ const SettingsScreen = () => {
         ],
       );
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not prepare export.');
+      showError(e?.message ?? 'Could not prepare export.');
       setExporting(false);
     }
   };
@@ -162,7 +163,7 @@ const SettingsScreen = () => {
       setExportingMedia(true);
       const count = await getMediaCount();
       if (count === 0) {
-        Alert.alert('No Media', 'No images found to export.');
+        showError('No images found to export.');
         return;
       }
       Alert.alert(
@@ -183,9 +184,9 @@ const SettingsScreen = () => {
                 await exportMedia();
               } catch (e: any) {
                 if (e?.message === 'NO_MEDIA') {
-                  Alert.alert('No Media', 'No images found to export.');
+                  showError('No images found to export.');
                 } else {
-                  Alert.alert(
+                  showError(
                     'Export Failed',
                     e?.message ?? 'Something went wrong.',
                   );
@@ -198,8 +199,9 @@ const SettingsScreen = () => {
         ],
       );
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not prepare media export.');
-      setExportingMedia(false);
+      showError(`Error: Could not prepare media export: ${e}`);
+    } finally {
+      setExportingMedia(false); // ← this is the fix — always fires
     }
   };
 
@@ -246,7 +248,8 @@ const SettingsScreen = () => {
                   dispatch(fetchAllStars(currentSpace)),
                   dispatch(fetchAllMovies(currentSpace)),
                 ]);
-                Alert.alert(
+
+                showSuccess(
                   'Import Complete',
                   `Imported:\n\n• ${result.stars} star${
                     result.stars !== 1 ? 's' : ''
@@ -255,7 +258,7 @@ const SettingsScreen = () => {
                   }\n• ${result.links} link${result.links !== 1 ? 's' : ''}`,
                 );
               } catch (e: any) {
-                Alert.alert(
+                showError(
                   'Import Failed',
                   e?.message ?? 'Something went wrong.',
                 );
@@ -267,7 +270,7 @@ const SettingsScreen = () => {
         ],
       );
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not read file.');
+      showError(e?.message ?? 'Could not read file.');
     } finally {
       setImporting(false);
     }
@@ -294,7 +297,7 @@ const SettingsScreen = () => {
       ) {
         return;
       }
-      Alert.alert('Import Failed', e?.message ?? 'Something went wrong.');
+      showError('Import Failed', e?.message ?? 'Something went wrong.');
     } finally {
       setImportingMedia(false);
     }

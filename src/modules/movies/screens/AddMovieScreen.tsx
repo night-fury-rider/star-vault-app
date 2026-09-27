@@ -22,6 +22,7 @@ import { createMovie, updateMovie } from '../../../store/thunks/movie-thunks';
 import { copyMovieProfile } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { showError } from '../../../utils/toast';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'AddMovie'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'AddMovie'>;
@@ -76,7 +77,7 @@ const AddMovieScreen = () => {
           : `file://${internalPath}`,
       );
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save image.');
+      showError(e?.message ?? 'Failed to save image.');
     }
   };
 
@@ -170,11 +171,7 @@ const AddMovieScreen = () => {
         const result = await dispatch(updateMovie(updated));
 
         if (updateMovie.rejected.match(result)) {
-          console.error('❌ updateMovie was rejected:', result.payload);
-          Alert.alert(
-            'Error',
-            String(result.payload) ?? 'Failed to update movie',
-          );
+          showError(String(result.payload) ?? 'Failed to update movie');
           return;
         }
 
@@ -202,11 +199,7 @@ const AddMovieScreen = () => {
         const result = await dispatch(createMovie(newMovie));
 
         if (createMovie.rejected.match(result)) {
-          console.error('❌ createMovie was rejected:', result.payload);
-          Alert.alert(
-            'Error',
-            String(result.payload) ?? 'Failed to save movie',
-          );
+          showError(String(result.payload) ?? 'Failed to save movie');
           return;
         }
 
@@ -215,8 +208,7 @@ const AddMovieScreen = () => {
 
       navigation.goBack();
     } catch (e: any) {
-      console.error('❌ handleSave caught error:', e);
-      Alert.alert('Error', e?.message ?? 'Failed to save movie');
+      showError(e?.message ?? 'Failed to save movie');
     } finally {
       setSaving(false);
     }

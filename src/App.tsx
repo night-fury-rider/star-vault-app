@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { ThemeProvider } from './theme';
 import TabNavigator from './navigation/TabNavigator';
 import { store } from './store/store';
@@ -75,6 +76,7 @@ const AppContent = () => {
           <TabNavigator />
         </NavigationContainer>
       </ThemeProvider>
+      <Toast />
     </SafeAreaProvider>
   );
 };

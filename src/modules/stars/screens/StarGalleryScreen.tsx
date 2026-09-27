@@ -28,6 +28,7 @@ import {
 import { copyStarGalleryImage } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { showError } from '../../../utils/toast';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'StarGallery'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'StarGallery'>;
@@ -131,7 +132,7 @@ const StarGalleryScreen = () => {
       };
       dispatch(addMediaThunk({ starId: star.id, media: newMedia }));
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save media.');
+      showError(e?.message ?? 'Failed to save media.');
     }
   };
 
