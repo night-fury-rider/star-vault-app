@@ -32,7 +32,7 @@ A powerful offline-first mobile application for managing and exploring actor-cen
 
 | Layer            | Technology                               | Version |
 | ---------------- | ---------------------------------------- | ------- |
-| Core Technology  | React Native                             | v0.85   |
+| Core Technology  | React Native                             | v0.87   |
 | Core Library     | React                                    | v19     |
 | Language         | TypeScript                               | v5      |
 | Database         | SQLite (`op-sqlite`)                     | v15     |
@@ -185,13 +185,15 @@ Open DBeaver. Press Create New Database. Select Database "SQLite". Select the `s
 Now we can see the current database values using DBeaver.
 
 # Create the release build
+
 https://github.com/night-fury-rider/react-native-template/wiki/Create-the-release-build
 <br/><br/>
 
 # Deploy the App on PlayStore
+
 https://github.com/night-fury-rider/react-native-template/wiki/Deploy-the-App-on-PlayStore
 <br/><br/>
 
 # Troubleshooting
-https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting
 
+https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting
