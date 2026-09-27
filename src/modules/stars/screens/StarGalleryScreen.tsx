@@ -57,50 +57,13 @@ const StarGalleryScreen = () => {
   }, [star.id, dispatch]);
 
   const handleAddMedia = () => {
-    Alert.alert('Add Media', 'Choose source', [
-      {
-        text: '📷 Camera — Photo',
-        onPress: () =>
-          launchCamera({ mediaType: 'photo', quality: 0.9 }, res => {
-            if (res.assets?.[0]?.uri) {
-              addMedia(res.assets[0].uri, 'image');
-            }
-          }),
+    launchImageLibrary(
+      { mediaType: 'photo', quality: 0.9, selectionLimit: 10 },
+      res => {
+        const uris = res.assets?.map(a => a.uri).filter(Boolean) as string[];
+        if (uris?.length) processAssets(uris, 'image');
       },
-      {
-        text: '🎥 Camera — Video',
-        onPress: () =>
-          launchCamera({ mediaType: 'video', videoQuality: 'high' }, res => {
-            if (res.assets?.[0]?.uri) {
-              addMedia(res.assets[0].uri, 'video');
-            }
-          }),
-      },
-      {
-        text: '🖼 Gallery — Photos',
-        onPress: () =>
-          launchImageLibrary(
-            { mediaType: 'photo', quality: 0.9, selectionLimit: 10 },
-            res => {
-              const uris = res.assets
-                ?.map(a => a.uri)
-                .filter(Boolean) as string[];
-              if (uris?.length) processAssets(uris, 'image');
-            },
-          ),
-      },
-      {
-        text: '📹 Gallery — Videos',
-        onPress: () =>
-          launchImageLibrary({ mediaType: 'video', selectionLimit: 5 }, res => {
-            const uris = res.assets
-              ?.map(a => a.uri)
-              .filter(Boolean) as string[];
-            if (uris?.length) processAssets(uris, 'video');
-          }),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    );
   };
 
   // ─── processAssets ────────────────────────────────────────
