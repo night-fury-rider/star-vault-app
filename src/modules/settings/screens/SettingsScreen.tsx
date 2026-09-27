@@ -32,7 +32,7 @@ import {
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
-import { showError, showSuccess } from '../../../utils/toast';
+import { showError, showInfo, showSuccess } from '../../../utils/toast';
 
 const ACCESS_KEY = 'starvault_access';
 
@@ -118,8 +118,12 @@ const SettingsScreen = () => {
 
   const handleExport = async () => {
     try {
-      setExporting(true);
       const summary = await getSummary();
+      if (summary.stars === 0 && summary.movies === 0) {
+        showInfo('Nothing to Export', 'Add some stars or movies first.');
+        return;
+      }
+      setExporting(true);
       Alert.alert(
         'Export Data',
         `This will export:\n\n• ${summary.stars} star${
@@ -163,7 +167,10 @@ const SettingsScreen = () => {
       setExportingMedia(true);
       const count = await getMediaCount();
       if (count === 0) {
-        showError('No images found to export.');
+        showInfo(
+          'Nothing to Export',
+          'Add some images to stars or movies first.',
+        );
         return;
       }
       Alert.alert(
