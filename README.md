@@ -1,23 +1,27 @@
 # ⭐ Star Vault
 
-A powerful offline-first mobile application for managing and exploring actor-centric media data. Built with React Native CLI and TypeScript, Star Vault demonstrates local-first architecture, strong data modeling, and clean separation of concerns.
+A personal, offline-first vault for tracking your favorite stars and movies.
+
+[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60">](https://play.google.com/store/apps/details?id=com.yuvrajpatil.apps.starvault)
 
 ---
 
 <br />
 
-# 📱 Screenshots
+## 📱 Screenshots
 
 <p>
-  <pre><img src="https://github.com/user-attachments/assets/99de77e0-fa14-4731-9f28-16b28e15b009" width="200" height="400" alt=""/> <img src="https://github.com/user-attachments/assets/762c91d7-b6bf-43df-85ae-71550c330cea" width="200" height="400"/> <img src="https://github.com/user-attachments/assets/ce8ce54d-79e3-4f53-8c31-bf718dc1da29" width="200" height="400"/>
+  <pre><img src="https://github.com/user-attachments/assets/99de77e0-fa14-4731-9f28-16b28e15b009" width="200" height="400"/> <img src="https://github.com/user-attachments/assets/762c91d7-b6bf-43df-85ae-71550c330cea" width="200" height="400"/> <img src="https://github.com/user-attachments/assets/ce8ce54d-79e3-4f53-8c31-bf718dc1da29" width="200" height="400"/>
   </pre>
 </p>
 
 ---
 
-<br />
+## About
 
-# 🚀 Features
+Star Vault is a personal media companion for tracking stars and movies — completely offline, completely private.
+
+### 🚀 Features
 
 - **Star Management** — Create, read, update, and delete stars with rich profile data
 - **Movie Association** — Link stars to movies with many-to-many relationships
@@ -29,23 +33,45 @@ A powerful offline-first mobile application for managing and exploring actor-cen
 
 ---
 
-<br />
+## Architecture
+
+A few decisions shaped how this app is built — and why it holds up as the feature set grows.
+
+**Repository → Service → Thunk → Screen**  
+Screens don't touch the database. Repositories don't know Redux exists. Each layer can be tested and replaced independently. This boundary discipline is what keeps the codebase from becoming a mess as it scales.
+
+**Database layer behind an interface**  
+All database access goes through a `DBAdapter` interface. When `op-sqlite` introduced breaking changes, only one file needed updating — nothing in the business logic moved.
+
+**Single database, dual-space design**  
+Rather than maintaining two separate databases for standard and private modes, a single `space` column on each table keeps the data model simple and queries atomic. One database to migrate, back up, and reason about.
+
+**Safe schema migrations**  
+Each migration checks `PRAGMA table_info()` before attempting `ALTER TABLE`. Existing installs upgrade cleanly without wiping data — something that matters the moment real users are involved.
+
+**Offline-first by default**  
+No backend, no auth, no network dependency. Everything lives on the device. Fast, private, and reliable regardless of connectivity.
+
+---
 
 # 🧱 Tech Stack
 
-| Layer            | Technology                               | Version |
-| ---------------- | ---------------------------------------- | ------- |
-| Core Technology  | React Native                             | v0.87   |
-| Core Library     | React                                    | v19     |
-| Language         | TypeScript                               | v5      |
-| Database         | SQLite (`op-sqlite`)                     | v15     |
-| State Management | Redux Toolkit                            | v2      |
-| Navigation       | React Navigation (Bottom Tabs)           | v7      |
-| Image Picker     | `react-native-image-picker`              | v8      |
-| Date Picker      | `@react-native-community/datetimepicker` | v9      |
-| Document Picker  | `@react-native-documents/picker`         | v12     |
-| Icons            | `react-native-vector-icons`              | v10     |
-| Theming          | React Context API (custom, no library)   |         |
+| Layer             | Technology                               | Version | Why                                                                        |
+| ----------------- | ---------------------------------------- | ------- | -------------------------------------------------------------------------- |
+| Core Technology   | React Native CLI                         | 0.87    | Full native control — no Expo constraints                                  |
+| Core Library      | React                                    | 19      |
+| Language          | TypeScript                               | 5       |
+| Database          | SQLite (`op-sqlite`)                     | 15      | Best performance among RN SQLite options; sync API avoids async complexity |
+| State Management  | Redux Toolkit                            | 2       |
+| Navigation        | React Navigation (Bottom Tabs)           | 7       |
+| Key-Value Storage | MMKV                                     | 7       | 10x faster than AsyncStorage; used for preferences and access state        |
+| Image Picker      | `react-native-image-picker`              | 8       |
+| Date Picker       | `@react-native-community/datetimepicker` | 9       |
+| Document Picker   | `@react-native-documents/picker`         | 12      | Handles keepLocalCopy for reliable file access across Android versions     |
+| File Management   | react-native-blob-util                   | 0.21    | Internal media storage, file copy, and cache cleanup                       |
+| Archive           | react-native-zip-archive                 | 7       | ZIP-based media export and import pipeline                                 |
+| Icons             | `react-native-vector-icons`              | 10      |
+| Theming           | React Context API (custom, no library)   | -       | Avoids third-party dependency for a simple three-theme system              |
 
 ---
 
@@ -104,58 +130,36 @@ Star Vault/
 
 ---
 
-<br />
-
-### Install dependencies
+### Installation
 
 ```bash
+git clone https://github.com/night-fury-rider/star-vault-app.git
+cd star-vault
 npm install
 ```
 
-### Create the dev build
+### Run
 
+```bash
+npm run android
 ```
+
+## Scripts
+
+```bash
+# Enter in Sandbox mode
 npm run mode:sandbox
 ```
 
-### Create the prod build
-
-```
+```bash
+# Exit the Sandbox mode
 npm run mode:prod
 ```
 
-### Install the app
-
-```
-npm run android
-```
-
-### Export Source Files to build_src
-
-```
+```bash
+# Export source files
 npm run export-src
 ```
-
-### Enable Wireless hot reload on Mobile
-
-- Make sure that mobile with USB debugging enabled
-- Make sure that mobile and laptop are on the same wifi.
-- Run `adb devices` to get Mobile device name.
-- Run `ipconfig getifaddr en0` to get the IP (v4).
-- Connect mobile to laptop via USB cable.
-- Install the app
-
-```
-npm run android
-```
-
-- Disconnect mobile from USB. Metro bundler will be disconnected.
-- Shake the mobile to open the React Native Dev menu. Select Settings. Open Debug server host & port for device.
-- Enter IP v4 (from step 1) and port number (Generally 8081). Ex. `11.22.33.44:8081`
-- Shake the mobile to open the React Native Dev menu .
-- Select Reload. Now hot reload should work.
-
-  <br/><br/>
 
 ---
 
