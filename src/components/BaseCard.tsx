@@ -39,8 +39,8 @@ const BaseCard = ({ item, onPress, onDelete }: Props) => {
         if (gestureState.dx < SWIPE_THRESHOLD) {
           // Show delete confirmation
           Alert.alert(
-            'Delete',
-            `Are you sure you want to delete "${item.name}"?`,
+            'Remove',
+            `Are you sure you want to remove "${item.name}"?`,
             [
               {
                 text: 'Cancel',
@@ -48,7 +48,7 @@ const BaseCard = ({ item, onPress, onDelete }: Props) => {
                 onPress: () => resetSwipe(),
               },
               {
-                text: 'Delete',
+                text: 'Remove',
                 style: 'destructive',
                 onPress: () => onDelete(item.id),
               },

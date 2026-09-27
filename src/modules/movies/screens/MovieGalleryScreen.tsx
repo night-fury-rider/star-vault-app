@@ -135,12 +135,12 @@ const MovieGalleryScreen = () => {
 
   const handleDeleteSelected = () => {
     Alert.alert(
-      'Delete Media',
-      `Delete ${selectedIds.size} item${selectedIds.size > 1 ? 's' : ''}?`,
+      'Remove Media',
+      `Remove ${selectedIds.size} item${selectedIds.size > 1 ? 's' : ''}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Remove',
           style: 'destructive',
           onPress: () => {
             dispatch(

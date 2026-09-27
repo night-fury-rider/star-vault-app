@@ -31,10 +31,10 @@ const BaseGridCard = ({ item, onPress, onDelete }: Props) => {
   const { theme } = useTheme();
 
   const handleLongPress = () => {
-    Alert.alert('Delete', `Are you sure you want to delete "${item.name}"?`, [
+    Alert.alert('Remove', `Are you sure you want to remove "${item.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Delete',
+        text: 'Remove',
         style: 'destructive',
         onPress: () => onDelete(item.id),
       },

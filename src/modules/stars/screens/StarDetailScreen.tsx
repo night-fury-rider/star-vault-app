@@ -79,12 +79,12 @@ const StarDetailScreen = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Star',
-      `Are you sure you want to delete "${star.stageName}"? This will also delete all gallery media.`,
+      'Remove Star',
+      `Are you sure you want to remove "${star.stageName}"? This will also remove all gallery media.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             await dispatch(deleteStar(star.id));

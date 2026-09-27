@@ -69,12 +69,12 @@ const MovieDetailScreen = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Movie',
-      `Are you sure you want to delete "${movie.title}"? This will also delete all gallery media.`,
+      'Remove Movie',
+      `Are you sure you want to remove "${movie.title}"? This will also remove all gallery media.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             await dispatch(deleteMovie(movie.id));
