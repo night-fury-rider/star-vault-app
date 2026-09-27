@@ -82,27 +82,11 @@ const AddMovieScreen = () => {
   };
 
   const handlePickImage = () => {
-    Alert.alert('Select Image', 'Choose image source', [
-      {
-        text: 'Camera',
-        onPress: () =>
-          launchCamera({ mediaType: 'photo', quality: 0.8 }, response => {
-            if (response.assets?.[0]?.uri) {
-              handlePickedUri(response.assets[0].uri);
-            }
-          }),
-      },
-      {
-        text: 'Gallery',
-        onPress: () =>
-          launchImageLibrary({ mediaType: 'photo', quality: 0.8 }, response => {
-            if (response.assets?.[0]?.uri) {
-              handlePickedUri(response.assets[0].uri);
-            }
-          }),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    launchImageLibrary({ mediaType: 'photo', quality: 0.8 }, response => {
+      if (response.assets?.[0]?.uri) {
+        handlePickedUri(response.assets[0].uri);
+      }
+    });
   };
 
   // ─── Custom attribute handlers ────────────────────────────
