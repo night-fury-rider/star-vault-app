@@ -185,11 +185,13 @@ Open DBeaver. Press Create New Database. Select Database "SQLite". Select the `s
 Now we can see the current database values using DBeaver.
 
 # Create the release build
-
 https://github.com/night-fury-rider/react-native-template/wiki/Create-the-release-build
-
 <br/><br/>
 
 # Deploy the App on PlayStore
-
 https://github.com/night-fury-rider/react-native-template/wiki/Deploy-the-App-on-PlayStore
+<br/><br/>
+
+# Troubleshooting
+https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting
+
