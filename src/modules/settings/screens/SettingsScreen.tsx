@@ -580,21 +580,6 @@ const SettingsScreen = () => {
             </View>
           </TouchableOpacity>
         </View>
-
-        {/* ── Current Theme Info ────────────────────────── */}
-        <View
-          style={[
-            styles.infoBox,
-            { backgroundColor: theme.card, borderColor: theme.border },
-          ]}
-        >
-          <Text style={[styles.infoText, { color: theme.text.secondary }]}>
-            Current theme:{' '}
-            <Text style={[styles.infoValue, { color: theme.primary }]}>
-              {THEMES.find(t => t.name === themeName)?.label}
-            </Text>
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
