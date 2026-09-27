@@ -1,13 +1,14 @@
 import { open } from '@op-engineering/op-sqlite';
 import { DBAdapter, DBResult } from './db-adapter';
+import LoggerService from '../../services/LoggerService';
 
 let dbInstance: any = null;
 
 const getDB = () => {
   if (!dbInstance) {
-    console.log('🔧 Opening DB connection...');
+    LoggerService.log('🔧 Opening DB connection...');
     dbInstance = open({ name: 'starvault.db' });
-    console.log('✅ DB connection opened');
+    LoggerService.log('✅ DB connection opened');
   }
   return dbInstance;
 };
@@ -73,12 +74,12 @@ export class OPSQLiteAdapter implements DBAdapter {
   async execute(query: string, params: any[] = []): Promise<DBResult> {
     try {
       const db = getDB();
-      console.log('🗄 SQL:', query.trim().substring(0, 80));
+      LoggerService.log('🗄 SQL:', query.trim().substring(0, 80));
 
       const result = db.executeSync(query, params);
       const rows = toNamedRows(result, query);
 
-      console.log('✅ rows:', rows.length);
+      LoggerService.log('✅ rows:', rows.length);
 
       return {
         rows,
@@ -86,7 +87,7 @@ export class OPSQLiteAdapter implements DBAdapter {
         insertId: result?.insertId,
       };
     } catch (e) {
-      console.error('❌ SQL Error:', query, e);
+      LoggerService.error('❌ SQL Error:', query, e);
       throw e;
     }
   }
@@ -104,9 +105,9 @@ export class OPSQLiteAdapter implements DBAdapter {
 
     try {
       await fn(txAdapter);
-      console.log('✅ Transaction fn completed');
+      LoggerService.log('✅ Transaction fn completed');
     } catch (e) {
-      console.error('❌ Transaction error:', e);
+      LoggerService.error('❌ Transaction error:', e);
       throw e;
     }
   }
@@ -115,7 +116,7 @@ export class OPSQLiteAdapter implements DBAdapter {
     if (dbInstance) {
       dbInstance.close();
       dbInstance = null;
-      console.log('✅ DB closed');
+      LoggerService.log('✅ DB closed');
     }
   }
 }

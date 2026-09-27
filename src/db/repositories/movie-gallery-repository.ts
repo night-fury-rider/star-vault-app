@@ -1,5 +1,6 @@
 import { DBAdapter } from '../adapter/db-adapter';
 import { GalleryMedia } from '../../navigation/navigation-types';
+import LoggerService from '../../services/LoggerService';
 
 export class MovieGalleryRepository {
   private adapter: DBAdapter;
@@ -9,24 +10,32 @@ export class MovieGalleryRepository {
   }
 
   async insert(movieId: string, media: GalleryMedia): Promise<void> {
-    console.log('💾 MovieGalleryRepo.insert:', media.id, 'for movie:', movieId);
+    LoggerService.log(
+      '💾 MovieGalleryRepo.insert:',
+      media.id,
+      'for movie:',
+      movieId,
+    );
     await this.adapter.execute(
       `INSERT INTO MovieImage (id, movieId, filePath, type, createdAt)
        VALUES (?, ?, ?, ?, ?);`,
       [media.id, movieId, media.uri, media.type, media.createdAt],
     );
-    console.log('✅ MovieGalleryRepo.insert done');
+    LoggerService.log('✅ MovieGalleryRepo.insert done');
   }
 
   async findByMovieId(movieId: string): Promise<GalleryMedia[]> {
-    console.log('💾 MovieGalleryRepo.findByMovieId:', movieId);
+    LoggerService.log('💾 MovieGalleryRepo.findByMovieId:', movieId);
     const result = await this.adapter.execute(
       `SELECT * FROM MovieImage
        WHERE movieId = ?
        ORDER BY createdAt DESC;`,
       [movieId],
     );
-    console.log('✅ MovieGalleryRepo.findByMovieId rows:', result.rows.length);
+    LoggerService.log(
+      '✅ MovieGalleryRepo.findByMovieId rows:',
+      result.rows.length,
+    );
     return result.rows.map(row => ({
       id: row.id,
       uri: row.filePath,
@@ -36,28 +45,28 @@ export class MovieGalleryRepository {
   }
 
   async delete(mediaId: string): Promise<void> {
-    console.log('💾 MovieGalleryRepo.delete:', mediaId);
+    LoggerService.log('💾 MovieGalleryRepo.delete:', mediaId);
     await this.adapter.execute(`DELETE FROM MovieImage WHERE id = ?;`, [
       mediaId,
     ]);
-    console.log('✅ MovieGalleryRepo.delete done');
+    LoggerService.log('✅ MovieGalleryRepo.delete done');
   }
 
   async deleteBatch(mediaIds: string[]): Promise<void> {
-    console.log('💾 MovieGalleryRepo.deleteBatch:', mediaIds.length);
+    LoggerService.log('💾 MovieGalleryRepo.deleteBatch:', mediaIds.length);
     const placeholders = mediaIds.map(() => '?').join(', ');
     await this.adapter.execute(
       `DELETE FROM MovieImage WHERE id IN (${placeholders});`,
       mediaIds,
     );
-    console.log('✅ MovieGalleryRepo.deleteBatch done');
+    LoggerService.log('✅ MovieGalleryRepo.deleteBatch done');
   }
 
   async deleteAllForMovie(movieId: string): Promise<void> {
-    console.log('💾 MovieGalleryRepo.deleteAllForMovie:', movieId);
+    LoggerService.log('💾 MovieGalleryRepo.deleteAllForMovie:', movieId);
     await this.adapter.execute(`DELETE FROM MovieImage WHERE movieId = ?;`, [
       movieId,
     ]);
-    console.log('✅ MovieGalleryRepo.deleteAllForMovie done');
+    LoggerService.log('✅ MovieGalleryRepo.deleteAllForMovie done');
   }
 }

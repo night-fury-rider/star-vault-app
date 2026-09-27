@@ -4,6 +4,7 @@ import {
   CustomAttribute,
   Space,
 } from '../../modules/stars/types/star-types';
+import LoggerService from '../../services/LoggerService';
 
 export class StarRepository {
   private adapter: DBAdapter;
@@ -53,13 +54,13 @@ export class StarRepository {
 
   // ─── READ ALL (scoped to a space) ──────────────────────────
   async findAll(space: Space): Promise<Star[]> {
-    console.log('💾 StarRepo.findAll:', space);
+    LoggerService.log('💾 StarRepo.findAll:', space);
     const result = await this.adapter.execute(
       `SELECT * FROM Person WHERE space = ? ORDER BY stageName ASC;`,
       [space],
     );
 
-    console.log('💾 StarRepo.findAll rows:', result.rows?.length);
+    LoggerService.log('💾 StarRepo.findAll rows:', result.rows?.length);
 
     if (!result.rows || result.rows.length === 0) {
       return [];

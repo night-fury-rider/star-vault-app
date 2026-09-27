@@ -1,17 +1,18 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { StarService } from '../../modules/stars/services/StarService';
 import { GalleryMedia } from '../../navigation/navigation-types';
+import LoggerService from '../../services/LoggerService';
 
 export const fetchGallery = createAsyncThunk(
   'gallery/fetch',
   async (starId: string, { rejectWithValue }) => {
     try {
-      console.log('🎬 Thunk: fetchGallery for star:', starId);
+      LoggerService.log('🎬 Thunk: fetchGallery for star:', starId);
       const media = await StarService.getGallery(starId);
-      console.log('🎬 Thunk: fetchGallery result:', media.length);
+      LoggerService.log('🎬 Thunk: fetchGallery result:', media.length);
       return { starId, media };
     } catch (e: any) {
-      console.error('❌ Thunk: fetchGallery error:', e);
+      LoggerService.error('❌ Thunk: fetchGallery error:', e);
       return rejectWithValue(e?.message ?? 'Failed to fetch gallery');
     }
   },
@@ -24,12 +25,12 @@ export const addMedia = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      console.log('🎬 Thunk: addMedia', media.type, 'for star:', starId);
+      LoggerService.log('🎬 Thunk: addMedia', media.type, 'for star:', starId);
       await StarService.addMedia(starId, media);
-      console.log('🎬 Thunk: addMedia done');
+      LoggerService.log('🎬 Thunk: addMedia done');
       return { starId, media };
     } catch (e: any) {
-      console.error('❌ Thunk: addMedia error:', e);
+      LoggerService.error('❌ Thunk: addMedia error:', e);
       return rejectWithValue(e?.message ?? 'Failed to add media');
     }
   },
@@ -42,12 +43,12 @@ export const deleteMedia = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      console.log('🎬 Thunk: deleteMedia:', mediaId);
+      LoggerService.log('🎬 Thunk: deleteMedia:', mediaId);
       await StarService.deleteMedia(mediaId);
-      console.log('🎬 Thunk: deleteMedia done');
+      LoggerService.log('🎬 Thunk: deleteMedia done');
       return { starId, mediaId };
     } catch (e: any) {
-      console.error('❌ Thunk: deleteMedia error:', e);
+      LoggerService.error('❌ Thunk: deleteMedia error:', e);
       return rejectWithValue(e?.message ?? 'Failed to delete media');
     }
   },
@@ -60,12 +61,12 @@ export const deleteMediaBatch = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      console.log('🎬 Thunk: deleteMediaBatch:', mediaIds.length);
+      LoggerService.log('🎬 Thunk: deleteMediaBatch:', mediaIds.length);
       await StarService.deleteMediaBatch(mediaIds);
-      console.log('🎬 Thunk: deleteMediaBatch done');
+      LoggerService.log('🎬 Thunk: deleteMediaBatch done');
       return { starId, mediaIds };
     } catch (e: any) {
-      console.error('❌ Thunk: deleteMediaBatch error:', e);
+      LoggerService.error('❌ Thunk: deleteMediaBatch error:', e);
       return rejectWithValue(e?.message ?? 'Failed to delete media');
     }
   },

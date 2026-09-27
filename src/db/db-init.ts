@@ -1,3 +1,4 @@
+import LoggerService from '../services/LoggerService';
 import { DBAdapter } from './adapter/db-adapter';
 
 export const ensureSpaceColumn = async (
@@ -7,7 +8,7 @@ export const ensureSpaceColumn = async (
   const info = await adapter.execute(`PRAGMA table_info(${table});`);
   const hasSpace = info.rows.some((r: any) => r.name === 'space');
   if (!hasSpace) {
-    console.log(`🏗 Adding space column to ${table}...`);
+    LoggerService.log(`🏗 Adding space column to ${table}...`);
     await adapter.execute(
       `ALTER TABLE ${table} ADD COLUMN space TEXT NOT NULL DEFAULT 'private';`,
     );
@@ -16,7 +17,7 @@ export const ensureSpaceColumn = async (
 
 export const createTables = async (adapter: DBAdapter): Promise<void> => {
   try {
-    console.log('🏗 Creating tables...');
+    LoggerService.log('🏗 Creating tables...');
 
     await adapter.execute(`
       CREATE TABLE IF NOT EXISTS Person (
@@ -95,7 +96,7 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
 
     for (const m of movieMigrations) {
       if (!movieCols.includes(m.col)) {
-        console.log(`🔧 Movie migration: adding column "${m.col}"`);
+        LoggerService.log(`🔧 Movie migration: adding column "${m.col}"`);
         await adapter.execute(m.ddl);
       }
     }
@@ -137,13 +138,13 @@ export const createTables = async (adapter: DBAdapter): Promise<void> => {
     await ensureSpaceColumn(adapter, 'Person');
     await ensureSpaceColumn(adapter, 'Movie');
 
-    console.log('✅ All tables created');
+    LoggerService.log('✅ All tables created');
     const tables = await adapter.execute(
       `SELECT name FROM sqlite_master WHERE type='table';`,
     );
-    console.log('📋 Tables in DB:', JSON.stringify(tables.rows));
+    LoggerService.log('📋 Tables in DB:', JSON.stringify(tables.rows));
   } catch (e) {
-    console.error('❌ Failed to create tables:', e);
+    LoggerService.error('❌ Failed to create tables:', e);
     throw e;
   }
 };

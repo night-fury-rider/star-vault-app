@@ -6,12 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { useTheme } from '../../../theme';
 import { MoviesStackParamList } from '../../../navigation/navigation-types';
 import { Movie, MovieCustomAttribute } from '../types/movie-types';
@@ -23,6 +22,7 @@ import { copyMovieProfile } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { showError } from '../../../utils/toast';
+import LoggerService from '../../../services/LoggerService';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'AddMovie'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'AddMovie'>;
@@ -151,7 +151,7 @@ const AddMovieScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        console.log('✏️ Dispatching updateMovie...');
+        LoggerService.log('✏️ Dispatching updateMovie...');
         const result = await dispatch(updateMovie(updated));
 
         if (updateMovie.rejected.match(result)) {
@@ -159,7 +159,7 @@ const AddMovieScreen = () => {
           return;
         }
 
-        console.log('✅ Movie updated successfully, going back');
+        LoggerService.log('✅ Movie updated successfully, going back');
       } else {
         // ─── CREATE ───────────────────────────────────────
         const newMovie: Movie = {
@@ -179,7 +179,7 @@ const AddMovieScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        console.log('🎬 Dispatching createMovie...');
+        LoggerService.log('🎬 Dispatching createMovie...');
         const result = await dispatch(createMovie(newMovie));
 
         if (createMovie.rejected.match(result)) {
@@ -187,7 +187,7 @@ const AddMovieScreen = () => {
           return;
         }
 
-        console.log('✅ Movie saved successfully, going back');
+        LoggerService.log('✅ Movie saved successfully, going back');
       }
 
       navigation.goBack();

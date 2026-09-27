@@ -29,7 +29,7 @@ const AppContent = () => {
         await ensureSpaceColumn(adapter, 'Movie');
         setDbReady(true);
       } catch (e: any) {
-        console.error('❌ Setup error:', e);
+        LoggerService.error('❌ Setup error:', e);
         setDbError(e?.message ?? 'Failed to initialize database');
       }
     };

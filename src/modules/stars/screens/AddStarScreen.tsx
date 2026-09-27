@@ -6,12 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { useTheme } from '../../../theme';
 import { StarsStackParamList } from '../../../navigation/navigation-types';
 import { CustomAttribute, Star } from '../types/star-types';
@@ -24,6 +23,7 @@ import { copyStarProfile } from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { showError } from '../../../utils/toast';
+import LoggerService from '../../../services/LoggerService';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'AddStar'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'AddStar'>;
@@ -157,7 +157,7 @@ const AddStarScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        console.log('✏️ Dispatching updateStar...');
+        LoggerService.log('✏️ Dispatching updateStar...');
         const result = await dispatch(updateStar(updatedStar));
 
         if (updateStar.rejected.match(result)) {
@@ -187,7 +187,7 @@ const AddStarScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        console.log('⭐ Dispatching createStar...');
+        LoggerService.log('⭐ Dispatching createStar...');
         const result = await dispatch(createStar(newStar));
 
         if (createStar.rejected.match(result)) {

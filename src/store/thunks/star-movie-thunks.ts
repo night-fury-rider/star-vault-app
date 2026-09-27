@@ -5,6 +5,7 @@ import { Space } from '../../modules/stars/types/star-types';
 import { fetchAllMovies } from './movie-thunks';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import LoggerService from '../../services/LoggerService';
 
 // ─── Fetch all movies linked to a star ───────────────────────
 export const fetchStarMovies = createAsyncThunk(
@@ -14,7 +15,7 @@ export const fetchStarMovies = createAsyncThunk(
     { rejectWithValue, dispatch, getState },
   ) => {
     try {
-      console.log('🎬 Thunk: fetchStarMovies for star:', starId);
+      LoggerService.log('🎬 Thunk: fetchStarMovies for star:', starId);
 
       const state = getState() as any;
       if (state.movies.list.length === 0) {
@@ -44,10 +45,10 @@ export const fetchStarMovies = createAsyncThunk(
         updatedAt: row.updatedAt,
         role: row.role ?? undefined,
       }));
-      console.log('🎬 Thunk: fetchStarMovies result:', movies.length);
+      LoggerService.log('🎬 Thunk: fetchStarMovies result:', movies.length);
       return { starId, movies };
     } catch (e: any) {
-      console.error('❌ Thunk: fetchStarMovies error:', e);
+      LoggerService.error('❌ Thunk: fetchStarMovies error:', e);
       return rejectWithValue(e?.message ?? 'Failed to fetch star movies');
     }
   },
@@ -66,7 +67,12 @@ export const addStarMovie = createAsyncThunk(
     { rejectWithValue, dispatch },
   ) => {
     try {
-      console.log('🎬 Thunk: addStarMovie', movie.id, 'for star:', starId);
+      LoggerService.log(
+        '🎬 Thunk: addStarMovie',
+        movie.id,
+        'for star:',
+        starId,
+      );
       const adapter = getDBAdapter();
 
       const existing = await adapter.execute(
@@ -84,10 +90,10 @@ export const addStarMovie = createAsyncThunk(
       // only ever connect same-space rows via the pickers.
       await dispatch(fetchAllMovies(movie.space));
 
-      console.log('🎬 Thunk: addStarMovie done');
+      LoggerService.log('🎬 Thunk: addStarMovie done');
       return { starId, movie: { ...movie, role } };
     } catch (e: any) {
-      console.error('❌ Thunk: addStarMovie error:', e);
+      LoggerService.error('❌ Thunk: addStarMovie error:', e);
       return rejectWithValue(e?.message ?? 'Failed to add movie to star');
     }
   },
@@ -105,7 +111,12 @@ export const removeStarMovie = createAsyncThunk(
     { rejectWithValue, dispatch },
   ) => {
     try {
-      console.log('🎬 Thunk: removeStarMovie', movieId, 'from star:', starId);
+      LoggerService.log(
+        '🎬 Thunk: removeStarMovie',
+        movieId,
+        'from star:',
+        starId,
+      );
       const adapter = getDBAdapter();
       await adapter.execute(
         `DELETE FROM StarMovie WHERE personId = ? AND movieId = ?;`,
@@ -114,10 +125,10 @@ export const removeStarMovie = createAsyncThunk(
 
       await dispatch(fetchAllMovies(space));
 
-      console.log('🎬 Thunk: removeStarMovie done');
+      LoggerService.log('🎬 Thunk: removeStarMovie done');
       return { starId, movieId };
     } catch (e: any) {
-      console.error('❌ Thunk: removeStarMovie error:', e);
+      LoggerService.error('❌ Thunk: removeStarMovie error:', e);
       return rejectWithValue(e?.message ?? 'Failed to remove movie from star');
     }
   },

@@ -23,6 +23,7 @@ import BaseGridCard from '../../../components/BaseGridCard';
 import BaseEmptyState from '../../../components/BaseEmptyState';
 import BaseFab from '../../../components/BaseFab';
 import { BaseItem } from '../../../components/base-types';
+import LoggerService from '../../../services/LoggerService';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'MoviesList'>;
 type ViewMode = 'card' | 'list';
@@ -40,7 +41,7 @@ const MoviesScreen = () => {
 
   useEffect(() => {
     const space = isUnlocked ? 'private' : 'public';
-    console.log(
+    LoggerService.log(
       '🎬 MoviesScreen mounted/mode changed — fetching movies:',
       space,
     );

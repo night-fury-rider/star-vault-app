@@ -11,7 +11,7 @@ import StarMoviePickerScreen from '../modules/stars/screens/StarMoviePickerScree
 import MovieDetailScreen from '../modules/movies/screens/MovieDetailScreen';
 import MovieGalleryScreen from '../modules/movies/screens/MovieGalleryScreen';
 import MovieMediaViewerScreen from '../modules/movies/screens/MovieMediaViewerScreen';
-import MovieStarPickerScreen from '../modules/stars/screens/StarMoviePickerScreen';
+import MovieStarPickerScreen from '../modules/movies/screens/MovieStarPickerScreen';
 
 const Stack = createStackNavigator<StarsStackParamList>();
 

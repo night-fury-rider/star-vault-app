@@ -20,6 +20,7 @@ import BaseGridCard from '../../../components/BaseGridCard';
 import BaseEmptyState from '../../../components/BaseEmptyState';
 import BaseFab from '../../../components/BaseFab';
 import { BaseItem } from '../../../components/base-types';
+import LoggerService from '../../../services/LoggerService';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'StarsList'>;
 type ViewMode = 'card' | 'list';
@@ -39,10 +40,16 @@ const StarsScreen = () => {
   // Load stars from SQLite on mount — must be before any early return
   useEffect(() => {
     const space = isUnlocked ? 'private' : 'public';
-    console.log('🏠 StarsScreen mounted/mode changed — fetching stars:', space);
+    LoggerService.log(
+      '🏠 StarsScreen mounted/mode changed — fetching stars:',
+      space,
+    );
     dispatch(fetchAllStars(space)).then(result => {
-      console.log('🏠 fetchAllStars result type:', result.type);
-      console.log('🏠 fetchAllStars payload:', JSON.stringify(result.payload));
+      LoggerService.log('🏠 fetchAllStars result type:', result.type);
+      LoggerService.log(
+        '🏠 fetchAllStars payload:',
+        JSON.stringify(result.payload),
+      );
     });
   }, [dispatch, isUnlocked]);
 
