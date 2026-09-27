@@ -7,8 +7,11 @@ A powerful offline-first mobile application for managing and exploring actor-cen
 <br />
 
 # 📱 Screenshots
-
-> _Coming soon_
+<p>
+  <pre><img src="https://github.com/user-attachments/assets/99de77e0-fa14-4731-9f28-16b28e15b009" width="200" height="400" alt=""/> <img src="https://github.com/user-attachments/assets/762c91d7-b6bf-43df-85ae-71550c330cea" width="200" height="400"/> <img src="https://github.com/user-attachments/assets/ce8ce54d-79e3-4f53-8c31-bf718dc1da29" width="200" height="400"/>
+  </pre>
+</p>
+ 
 
 ---
 
