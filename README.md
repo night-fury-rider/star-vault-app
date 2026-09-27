@@ -1,17 +1,17 @@
-# ⭐ StarVault
+# ⭐ Star Vault
 
-A powerful offline-first mobile application for managing and exploring actor-centric media data. Built with React Native CLI and TypeScript, StarVault demonstrates local-first architecture, strong data modeling, and clean separation of concerns.
+A powerful offline-first mobile application for managing and exploring actor-centric media data. Built with React Native CLI and TypeScript, Star Vault demonstrates local-first architecture, strong data modeling, and clean separation of concerns.
 
 ---
 
 <br />
 
 # 📱 Screenshots
+
 <p>
   <pre><img src="https://github.com/user-attachments/assets/99de77e0-fa14-4731-9f28-16b28e15b009" width="200" height="400" alt=""/> <img src="https://github.com/user-attachments/assets/762c91d7-b6bf-43df-85ae-71550c330cea" width="200" height="400"/> <img src="https://github.com/user-attachments/assets/ce8ce54d-79e3-4f53-8c31-bf718dc1da29" width="200" height="400"/>
   </pre>
 </p>
- 
 
 ---
 
@@ -54,7 +54,7 @@ A powerful offline-first mobile application for managing and exploring actor-cen
 # 📂 Project Structure
 
 ```
-StarVault/
+Star Vault/
 ├── src/
 │   ├── modules/
 │   │   ├── stars/
@@ -161,7 +161,7 @@ npm run android
 
 # 🎨 Theming
 
-StarVault includes a custom theming system built with React Context API — no external libraries.
+Star Vault includes a custom theming system built with React Context API — no external libraries.
 
 | Theme                | Preview   |
 | -------------------- | --------- |

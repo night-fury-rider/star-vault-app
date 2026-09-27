@@ -33,6 +33,7 @@ import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
 import { showError, showInfo, showSuccess } from '../../../utils/toast';
+import { COMMON } from '../../../constants/strings.constants';
 
 const ACCESS_KEY = 'starvault_access';
 
@@ -455,8 +456,8 @@ const SettingsScreen = () => {
                 Import Data
               </Text>
               <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-                Import a StarVault JSON export. Existing records with matching
-                IDs will be updated; new records will be added.
+                Import a {COMMON.appName} JSON export. Existing records with
+                matching IDs will be updated; new records will be added.
               </Text>
               <TouchableOpacity
                 style={[
@@ -486,8 +487,8 @@ const SettingsScreen = () => {
                 Import Media
               </Text>
               <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-                Import a StarVault media ZIP. Images will be matched to existing
-                stars and movies automatically.
+                Import a {COMMON.appName} media ZIP. Images will be matched to
+                existing stars and movies automatically.
               </Text>
               <TouchableOpacity
                 style={[

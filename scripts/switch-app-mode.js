@@ -11,7 +11,7 @@ const path = require('path');
 // 🔧 CONFIGURATION
 // =====================
 
-const appName = 'StarVault';
+const appName = 'Star Vault';
 const applicationId = 'com.yuvrajpatil.apps.starvault';
 const sandboxSuffix = '_Sandbox';
 
