@@ -1,4 +1,4 @@
-import Toast from 'react-native-toast-message';
+import Toast, { ToastPosition } from 'react-native-toast-message';
 
 // ─── Centralized toast utility ────────────────────────────────
 // All toast calls go through here. To swap the library in future,
@@ -8,9 +8,10 @@ const showSuccess = (
   title: string,
   message?: string,
   visibilityTime = 3000,
+  position = 'bottom' as ToastPosition,
 ): void => {
   Toast.show({
-    position: 'bottom',
+    position,
     type: 'success',
     text1: title,
     text2: message,
@@ -22,9 +23,10 @@ const showError = (
   title: string,
   message?: string,
   visibilityTime = 4000,
+  position = 'bottom' as ToastPosition,
 ): void => {
   Toast.show({
-    position: 'bottom',
+    position,
     type: 'error',
     text1: title,
     text2: message,
@@ -36,8 +38,10 @@ const showInfo = (
   title: string,
   message?: string,
   visibilityTime = 3000,
+  position = 'bottom' as ToastPosition,
 ): void => {
   Toast.show({
+    position,
     type: 'info',
     text1: title,
     text2: message,
