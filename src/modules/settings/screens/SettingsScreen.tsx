@@ -7,8 +7,9 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { version as APP_VERSION } from '../../../../package.json';
 import { useTheme } from '../../../theme';
 import { ThemeName } from '../../../theme';
@@ -53,6 +54,7 @@ const SettingsScreen = () => {
   const { theme, themeName, setTheme } = useTheme();
   const dispatch = useAppDispatch();
   const isUnlocked = useAppSelector(state => state.access.isUnlocked);
+  const { top } = useSafeAreaInsets();
   const currentSpace = isUnlocked ? 'private' : 'public';
 
   const [exporting, setExporting] = useState(false);
@@ -262,10 +264,13 @@ const SettingsScreen = () => {
     exporting || exportingMedia || importing || importingMedia || deleting;
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: theme.background }]}
-      edges={['top']}
+    <View
+      style={[
+        styles.safeArea,
+        { backgroundColor: theme.background, paddingTop: top },
+      ]}
     >
+      <StatusBar barStyle="dark-content" />
       <ScrollView
         style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.content}
@@ -582,7 +587,7 @@ const SettingsScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
