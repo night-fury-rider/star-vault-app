@@ -54,11 +54,11 @@ No backend, no auth, no network dependency. Everything lives on the device. Fast
 
 Star Vault includes a custom theming system built with React Context API — no external libraries.
 
-| Theme                | Primary Colour | Preview |
-| -------------------- | -------------- | ------- |
-| 🩵 Sky Blue (default) | `#0288D1`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" />        |
-| 🌸 Pink              | `#E91E8C`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" />        |
-| 🍊 Faint Orange      | `#F57C00`      |   <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" />       |
+| Theme                | Primary Colour | Preview                                                                                                              |
+| -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 🩵 Sky Blue (default) | `#0288D1`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" /> |
+| 🌸 Pink              | `#E91E8C`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" /> |
+| 🍊 Faint Orange      | `#F57C00`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" /> |
 
 Themes are switched from the Settings tab and persist across sessions.
 
@@ -202,3 +202,7 @@ https://github.com/night-fury-rider/react-native-template/wiki/Deploy-the-App-on
 # Troubleshooting
 
 https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
