@@ -52,6 +52,20 @@ Each migration checks `PRAGMA table_info()` before attempting `ALTER TABLE`. Exi
 **Offline-first by default**  
 No backend, no auth, no network dependency. Everything lives on the device. Fast, private, and reliable regardless of connectivity.
 
+### 🎨 Theming
+
+Star Vault includes a custom theming system built with React Context API — no external libraries.
+
+| Theme                | Primary Colour | Preview |
+| -------------------- | -------------- | ------- |
+| 🩵 Sky Blue (default) | `#0288D1`      |         |
+| 🌸 Pink              | `#E91E8C`      |         |
+| 🍊 Faint Orange      | `#F57C00`      |         |
+
+Themes are switched from the Settings tab and persist across sessions.
+
+---
+
 ---
 
 # 🧱 Tech Stack
@@ -160,20 +174,6 @@ npm run mode:prod
 # Export source files
 npm run export-src
 ```
-
----
-
-# 🎨 Theming
-
-Star Vault includes a custom theming system built with React Context API — no external libraries.
-
-| Theme                | Preview   |
-| -------------------- | --------- |
-| 🩵 Sky Blue (default) | `#0288D1` |
-| 🌸 Pink              | `#E91E8C` |
-| 🍊 Faint Orange      | `#F57C00` |
-
-Switch themes anytime from the **Settings** tab.
 
 ---
 
