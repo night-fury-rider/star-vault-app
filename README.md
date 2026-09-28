@@ -21,8 +21,6 @@ A personal, offline-first vault for tracking your favorite stars and movies.
 
 Star Vault is a personal media companion for tracking stars and movies — completely offline, completely private.
 
-### 🚀 Features
-
 - **Star Management** — Create, read, update, and delete stars with rich profile data
 - **Movie Association** — Link stars to movies with many-to-many relationships
 - **Image Gallery** — Star image gallery stored on the local file system
@@ -58,9 +56,9 @@ Star Vault includes a custom theming system built with React Context API — no 
 
 | Theme                | Primary Colour | Preview |
 | -------------------- | -------------- | ------- |
-| 🩵 Sky Blue (default) | `#0288D1`      |         |
-| 🌸 Pink              | `#E91E8C`      |         |
-| 🍊 Faint Orange      | `#F57C00`      |         |
+| 🩵 Sky Blue (default) | `#0288D1`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" />        |
+| 🌸 Pink              | `#E91E8C`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" />        |
+| 🍊 Faint Orange      | `#F57C00`      |   <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" />       |
 
 Themes are switched from the Settings tab and persist across sessions.
 
