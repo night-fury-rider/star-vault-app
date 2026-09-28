@@ -6,8 +6,6 @@ A personal, offline-first vault for tracking your favorite stars and movies.
 
 ---
 
-<br />
-
 ## 📱 Screenshots
 
 <p>
@@ -47,49 +45,25 @@ Rather than maintaining two separate databases for standard and private modes, a
 **Safe schema migrations**  
 Each migration checks `PRAGMA table_info()` before attempting `ALTER TABLE`. Existing installs upgrade cleanly without wiping data — something that matters the moment real users are involved.
 
-**Offline-first by default**  
-No backend, no auth, no network dependency. Everything lives on the device. Fast, private, and reliable regardless of connectivity.
-
-### 🎨 Theming
+**🎨 Theming**
 
 Star Vault includes a custom theming system built with React Context API — no external libraries.
 
-| Theme                | Primary Colour | Preview                                                                                                              |
+| Theme                | Preview | Primary Colour |                                                                                                               
 | -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 🩵 Sky Blue (default) | `#0288D1`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" /> |
-| 🌸 Pink              | `#E91E8C`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" /> |
-| 🍊 Faint Orange      | `#F57C00`      | <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" /> |
+| 🩵 Sky Blue (default) | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" />    |  `#0288D1`   |
+| 🌸 Pink              | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" />     | `#E91E8C`  |
+| 🍊 Faint Orange      | <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" />    |  `#F57C00`   |
 
 Themes are switched from the Settings tab and persist across sessions.
 
----
+**Offline-first by default**  
+No backend, no auth, no network dependency. Everything lives on the device. Fast, private, and reliable regardless of connectivity.
+
 
 ---
 
-# 🧱 Tech Stack
-
-| Layer             | Technology                               | Version | Why                                                                        |
-| ----------------- | ---------------------------------------- | ------- | -------------------------------------------------------------------------- |
-| Core Technology   | React Native CLI                         | 0.87    | Full native control — no Expo constraints                                  |
-| Core Library      | React                                    | 19      |
-| Language          | TypeScript                               | 5       |
-| Database          | SQLite (`op-sqlite`)                     | 15      | Best performance among RN SQLite options; sync API avoids async complexity |
-| State Management  | Redux Toolkit                            | 2       |
-| Navigation        | React Navigation (Bottom Tabs)           | 7       |
-| Key-Value Storage | MMKV                                     | 7       | 10x faster than AsyncStorage; used for preferences and access state        |
-| Image Picker      | `react-native-image-picker`              | 8       |
-| Date Picker       | `@react-native-community/datetimepicker` | 9       |
-| Document Picker   | `@react-native-documents/picker`         | 12      | Handles keepLocalCopy for reliable file access across Android versions     |
-| File Management   | react-native-blob-util                   | 0.21    | Internal media storage, file copy, and cache cleanup                       |
-| Archive           | react-native-zip-archive                 | 7       | ZIP-based media export and import pipeline                                 |
-| Icons             | `react-native-vector-icons`              | 10      |
-| Theming           | React Context API (custom, no library)   | -       | Avoids third-party dependency for a simple three-theme system              |
-
----
-
-<br />
-
-# 📂 Project Structure
+## 📂 Project Structure
 
 ```
 Star Vault/
@@ -127,15 +101,36 @@ Star Vault/
 
 ---
 
-<br />
+# 🧱 Tech Stack
 
+| Layer             | Technology                               | Version | Why                                                                        |
+| ----------------- | ---------------------------------------- | ------- | -------------------------------------------------------------------------- |
+| Core Technology   | React Native CLI                         | 0.87    | Full native control — no Expo constraints                                  |
+| Core Library      | React                                    | 19      |
+| Language          | TypeScript                               | 5       |
+| Database          | SQLite (`op-sqlite`)                     | 15      | Best performance among RN SQLite options; sync API avoids async complexity |
+| State Management  | Redux Toolkit                            | 2       |
+| Navigation        | React Navigation (Bottom Tabs)           | 7       |
+| Key-Value Storage | MMKV                                     | 7       | 10x faster than AsyncStorage; used for preferences and access state        |
+| Image Picker      | `react-native-image-picker`              | 8       |
+| Date Picker       | `@react-native-community/datetimepicker` | 9       |
+| Document Picker   | `@react-native-documents/picker`         | 12      | Handles keepLocalCopy for reliable file access across Android versions     |
+| File Management   | react-native-blob-util                   | 0.21    | Internal media storage, file copy, and cache cleanup                       |
+| Archive           | react-native-zip-archive                 | 7       | ZIP-based media export and import pipeline                                 |
+| Icons             | `react-native-vector-icons`              | 10      |
+| Theming           | React Context API (custom, no library)   | -       | Avoids third-party dependency for a simple three-theme system              |
+
+---
+
+
+ 
 # 🛠 Getting Started
 
 ## ⚙️ Prerequisites
 
 | Tool             | Version    |
 | ---------------- | ---------- |
-| Node.js          | >= 22.13.0 |
+| Node.js          | >= 22 |
 | React Native CLI | Latest     |
 | Android Studio   | Latest     |
 | JDK              | 17         |
