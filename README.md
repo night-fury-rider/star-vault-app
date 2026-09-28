@@ -49,17 +49,16 @@ Each migration checks `PRAGMA table_info()` before attempting `ALTER TABLE`. Exi
 
 Star Vault includes a custom theming system built with React Context API — no external libraries.
 
-| Theme                | Preview | Primary Colour |                                                                                                               
-| -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 🩵 Sky Blue (default) | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" />    |  `#0288D1`   |
-| 🌸 Pink              | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" />     | `#E91E8C`  |
-| 🍊 Faint Orange      | <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" />    |  `#F57C00`   |
+| Theme                | Preview                                                                                                              | Primary Colour |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 🩵 Sky Blue (default) | <img width="20" height="20" src="https://github.com/user-attachments/assets/6d115856-e789-47a7-afae-542997f1ded8" /> | `#0288D1`      |
+| 🌸 Pink              | <img width="20" height="20" src="https://github.com/user-attachments/assets/dab3224f-8017-4531-bb43-cc7d71149053" /> | `#E91E8C`      |
+| 🍊 Faint Orange      | <img width="20" height="20" src="https://github.com/user-attachments/assets/0922f2c1-b9c5-43f0-9caa-263d709ed60e" /> | `#F57C00`      |
 
 Themes are switched from the Settings tab and persist across sessions.
 
 **Offline-first by default**  
 No backend, no auth, no network dependency. Everything lives on the device. Fast, private, and reliable regardless of connectivity.
-
 
 ---
 
@@ -122,18 +121,16 @@ Star Vault/
 
 ---
 
-
- 
 # 🛠 Getting Started
 
 ## ⚙️ Prerequisites
 
-| Tool             | Version    |
-| ---------------- | ---------- |
-| Node.js          | >= 22 |
-| React Native CLI | Latest     |
-| Android Studio   | Latest     |
-| JDK              | 17         |
+| Tool             | Version |
+| ---------------- | ------- |
+| Node.js          | >= 22   |
+| React Native CLI | Latest  |
+| Android Studio   | Latest  |
+| JDK              | 17      |
 
 ---
 
@@ -170,33 +167,15 @@ npm run export-src
 
 ---
 
-# Database Inspection
+## Wiki
 
-Pull the SQLite database from the Android emulator to your desktop:
-
-```bash
-adb shell "run-as com.yuvrajpatil.apps.starvault cat /data/data/com.yuvrajpatil.apps.starvault/databases/starvault.db" > ~/Desktop/starvault.db
-```
-
-This will create `starvault.db` on the Desktop.
-
-Open DBeaver. Press Create New Database. Select Database "SQLite". Select the `starvault.db` in the path and press the Finish Button.
-
-Now we can see the current database values using DBeaver.
-
-# Create the release build
-
-https://github.com/night-fury-rider/react-native-template/wiki/Create-the-release-build
-<br/><br/>
-
-# Deploy the App on PlayStore
-
-https://github.com/night-fury-rider/react-native-template/wiki/Deploy-the-App-on-PlayStore
-<br/><br/>
-
-# Troubleshooting
-
-https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting
+- [Wireless Hot Reload on Mobile](https://github.com/night-fury-rider/react-native-template/wiki/Wireless-Hot-Reload-on-Mobile)
+- [Create a Logo](https://github.com/night-fury-rider/react-native-template/wiki/Create-a-Logo)
+- [Create Android Launcher Images](https://github.com/night-fury-rider/react-native-template/wiki/Create-Android-Launcher-Images)
+- [Create Release Build](https://github.com/night-fury-rider/react-native-template/wiki/Create-the-release-build)
+- [Deploy to Play Store](https://github.com/night-fury-rider/react-native-template/wiki/Deploy-the-App-on-PlayStore)
+- [Troubleshooting](https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting)
+- [SQLite Database Inspection](https://github.com/night-fury-rider/react-native-template/wiki/SQLite-Database-Inspection)
 
 ## License
 
