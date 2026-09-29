@@ -104,7 +104,7 @@ Star Vault/
 
 | Layer             | Technology                               | Version | Why                                                                        |
 | ----------------- | ---------------------------------------- | ------- | -------------------------------------------------------------------------- |
-| Core Technology   | React Native CLI                         | 0.87    | Full native control — no Expo constraints                                  |
+| Core Technology   | React Native with CLI                    | 0.87    | Full native control — no Expo constraints                                  |
 | Core Library      | React                                    | 19      |
 | Language          | TypeScript                               | 5       |
 | Database          | SQLite (`op-sqlite`)                     | 15      | Best performance among RN SQLite options; sync API avoids async complexity |
