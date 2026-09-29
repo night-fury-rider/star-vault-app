@@ -221,105 +221,83 @@ const deleteAll = async (space: Space): Promise<void> => {
   await adapter.execute('DELETE FROM Person WHERE space = ?;', [space]);
 };
 
-// ─── exportAll ────────────────────────────────────────────────
-// Always scoped to the private space.
-// Cross-space linking is prevented at the picker level, so a Person's
-// StarMovie/StarImage rows always belong to the same space as the
-// Person/Movie itself. We scope by joining back to Person/Movie ids.
-const exportAll = async (): Promise<void> => {
+const exportBackup = async (): Promise<void> => {
   const space = EXPORT_IMPORT_SPACE;
   const adapter = getDBAdapter();
+  const date = new Date().toISOString().slice(0, 10);
+  const tempDir = `${getCacheDir()}/starvault-backup-${date}`;
+  const zipPath = `${getCacheDir()}/star_vault_backup_${date}.zip`;
 
-  const [personResult, movieResult] = await Promise.all([
-    adapter.execute('SELECT * FROM Person WHERE space = ?;', [space]),
-    adapter.execute('SELECT * FROM Movie WHERE space = ?;', [space]),
-  ]);
+  try {
+    // ─── Step 1 — Collect DB data ─────────────────────────
+    const [personResult, movieResult] = await Promise.all([
+      adapter.execute('SELECT * FROM Person WHERE space = ?;', [space]),
+      adapter.execute('SELECT * FROM Movie WHERE space = ?;', [space]),
+    ]);
 
-  const [customAttrResult, starImageResult, starMovieResult, movieImageResult] =
-    await Promise.all([
+    const [
+      customAttrResult,
+      starImageResult,
+      starMovieResult,
+      movieImageResult,
+    ] = await Promise.all([
       adapter.execute(
         `SELECT ca.* FROM CustomAttribute ca
-         INNER JOIN Person p ON p.id = ca.personId
-         WHERE p.space = ?;`,
+           INNER JOIN Person p ON p.id = ca.personId
+           WHERE p.space = ?;`,
         [space],
       ),
       adapter.execute(
         `SELECT si.* FROM StarImage si
-         INNER JOIN Person p ON p.id = si.personId
-         WHERE p.space = ?;`,
+           INNER JOIN Person p ON p.id = si.personId
+           WHERE p.space = ?;`,
         [space],
       ),
       adapter.execute(
         `SELECT sm.* FROM StarMovie sm
-         INNER JOIN Person p ON p.id = sm.personId
-         WHERE p.space = ?;`,
+           INNER JOIN Person p ON p.id = sm.personId
+           WHERE p.space = ?;`,
         [space],
       ),
       adapter.execute(
         `SELECT mi.* FROM MovieImage mi
-         INNER JOIN Movie m ON m.id = mi.movieId
-         WHERE m.space = ?;`,
+           INNER JOIN Movie m ON m.id = mi.movieId
+           WHERE m.space = ?;`,
         [space],
       ),
     ]);
 
-  const payload: StarVaultExport = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    space,
-    tables: {
-      Person: personResult.rows,
-      CustomAttribute: customAttrResult.rows,
-      StarImage: starImageResult.rows,
-      Movie: movieResult.rows,
-      StarMovie: starMovieResult.rows,
-      MovieImage: movieImageResult.rows,
-    },
-  };
+    const payload: StarVaultExport = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      space,
+      tables: {
+        Person: personResult.rows,
+        CustomAttribute: customAttrResult.rows,
+        StarImage: starImageResult.rows,
+        Movie: movieResult.rows,
+        StarMovie: starMovieResult.rows,
+        MovieImage: movieImageResult.rows,
+      },
+    };
 
-  const json = JSON.stringify(payload, null, 2);
-  const filename = `starvault-export-${space}-${new Date()
-    .toISOString()
-    .slice(0, 10)}.json`;
+    // ─── Step 2 — Write data.json to temp folder ──────────
+    await ReactNativeBlobUtil.fs.mkdir(tempDir);
+    await ReactNativeBlobUtil.fs.writeFile(
+      `${tempDir}/data.json`,
+      JSON.stringify(payload, null, 2),
+      'utf8',
+    );
 
-  await Share.share(
-    { title: filename, message: json },
-    { dialogTitle: `Export StarVault Data (${space})` },
-  );
-};
-
-// ─── exportMedia ──────────────────────────────────────────────
-// Zips all private-space images with structured naming and shares ZIP.
-// Skips files that no longer exist on disk (stale DB paths from before
-// Step 1 migration). Throws 'NO_MEDIA' if nothing is exportable.
-// On Android uses actionViewIntent (FileProvider/content:// URI) to
-// avoid the file:// sharing restriction introduced in Android 7+.
-const exportMedia = async (): Promise<void> => {
-  const { stars, movies } = await collectStructuredMedia();
-  const entries = buildZipEntries(stars, movies);
-
-  if (entries.length === 0) {
-    throw new Error('NO_MEDIA');
-  }
-
-  const date = new Date().toISOString().slice(0, 10);
-  const tempDir = `${getCacheDir()}/starvault-media-${date}`;
-  const zipPath = getZipPath();
-
-  try {
-    // Build temp folder structure with correct named files.
-    // Skip any source file that no longer exists on disk — handles stale
-    // DB paths (e.g. old rn_image_picker_lib_temp_xxx paths from before
-    // the copy-on-pick migration).
-    let copiedCount = 0;
+    // ─── Step 3 — Copy media into temp folder ─────────────
+    const { stars, movies } = await collectStructuredMedia();
+    const entries = buildZipEntries(stars, movies);
 
     for (const entry of entries) {
       const sourceExists = await ReactNativeBlobUtil.fs.exists(
         entry.sourcePath,
       );
-      if (!sourceExists) {
-        continue;
-      }
+      if (!sourceExists) continue;
 
       const destPath = `${tempDir}/${entry.destName}`;
       const destFolder = destPath.substring(0, destPath.lastIndexOf('/'));
@@ -330,27 +308,26 @@ const exportMedia = async (): Promise<void> => {
       }
 
       await ReactNativeBlobUtil.fs.cp(entry.sourcePath, destPath);
-      copiedCount++;
     }
 
-    // All files were stale — nothing to export
-    if (copiedCount === 0) {
-      throw new Error('NO_MEDIA');
-    }
-
-    // Zip the entire temp folder
+    // ─── Step 4 — ZIP and share ───────────────────────────
     await zip(tempDir, zipPath);
 
     await RNShare.open({
       url: `file://${zipPath}`,
       type: 'application/zip',
-      filename: `starvault-media-${date}`,
+      filename: `star_vault_backup_${date}`,
       failOnCancel: false,
     });
   } finally {
-    // Best-effort cleanup of temp folder and ZIP
+    // ─── Step 5 — Cleanup ─────────────────────────────────
     try {
       await ReactNativeBlobUtil.fs.unlink(tempDir);
+    } catch {
+      /* ignore */
+    }
+    try {
+      await ReactNativeBlobUtil.fs.unlink(zipPath);
     } catch {
       /* ignore */
     }
@@ -402,6 +379,6 @@ const getSummary = async (): Promise<{
   };
 };
 
-export { deleteAll, exportAll, exportMedia, getMediaCount, getSummary };
+export { deleteAll, exportBackup, getMediaCount, getSummary };
 
 export type { StarVaultExport };

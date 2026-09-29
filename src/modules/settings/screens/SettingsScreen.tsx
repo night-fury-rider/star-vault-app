@@ -19,22 +19,14 @@ import { setUnlocked } from '../../../store/slices/access-slice';
 import StorageService from '../../../services/StorageService';
 import {
   deleteAll,
-  exportAll,
-  exportMedia,
-  getMediaCount,
+  exportBackup,
   getSummary,
 } from '../../../services/ExportService';
-import {
-  importAll,
-  importMedia,
-  pickFile,
-  readAndValidate,
-} from '../../../services/ImportService';
+import { importBackup } from '../../../services/ImportService';
 import { fetchAllStars } from '../../../store/thunks/star-thunks';
 import { fetchAllMovies } from '../../../store/thunks/movie-thunks';
 import { DEVELOPER_OPTIONS_TAP_COUNT } from '../../../constants/app-constants';
 import { showError, showInfo, showSuccess } from '../../../utils/toast';
-import { COMMON } from '../../../constants/strings.constants';
 
 const ACCESS_KEY = 'starvault_access';
 
@@ -58,13 +50,12 @@ const SettingsScreen = () => {
   const currentSpace = isUnlocked ? 'private' : 'public';
 
   const [exporting, setExporting] = useState(false);
-  const [exportingMedia, setExportingMedia] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importingMedia, setImportingMedia] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ─── 5-tap unlock on version row ─────────────────────────
   const [devTapCount, setDevTapCount] = useState(0);
+
+  const isBusy = exporting || importing || deleting;
 
   const handleVersionTap = () => {
     if (isUnlocked) return;
@@ -127,10 +118,8 @@ const SettingsScreen = () => {
         return;
       }
       setExporting(true);
-      await exportAll();
-      showSuccess(
-        `Exported ${summary.stars} stars and ${summary.movies} movies successfully`,
-      );
+      await exportBackup();
+      showSuccess('Backup exported successfully.');
     } catch (e: any) {
       showError(e?.message ?? 'Could not prepare export.');
     } finally {
@@ -138,114 +127,17 @@ const SettingsScreen = () => {
     }
   };
 
-  const handleExportMedia = async () => {
-    try {
-      setExportingMedia(true);
-      const count = await getMediaCount();
-      if (count === 0) {
-        showInfo(
-          'Nothing to Export',
-          'Add some images to stars or movies first.',
-        );
-        return;
-      }
-      await exportMedia();
-      showSuccess(`Exported media files successfully.`);
-    } catch (e: any) {
-      if (e?.message === 'NO_MEDIA') {
-        showError('No images found to export.');
-      } else {
-        showError('Export Failed', e?.message ?? 'Something went wrong.');
-      }
-    } finally {
-      setExportingMedia(false);
-    }
-  };
-
   const handleImport = async () => {
     try {
       setImporting(true);
-
-      let localUri: string;
-      try {
-        localUri = await pickFile();
-      } catch (e: any) {
-        if (
-          e?.code === 'DOCUMENT_PICKER_CANCELED' ||
-          e?.message?.includes('cancel')
-        ) {
-          return;
-        }
-        throw e;
-      }
-
-      const data = await readAndValidate(localUri);
-      const { tables } = data;
-      Alert.alert(
-        'Import Data',
-        `Found:\n\n• ${tables.Person.length} star${
-          tables.Person.length !== 1 ? 's' : ''
-        }\n• ${tables.Movie.length} movie${
-          tables.Movie.length !== 1 ? 's' : ''
-        }\n• ${tables.StarMovie.length} star-movie link${
-          tables.StarMovie.length !== 1 ? 's' : ''
-        }\n\nExisting records with matching IDs will be updated. New records will be added.`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => setImporting(false),
-          },
-          {
-            text: 'Import',
-            onPress: async () => {
-              try {
-                const result = await importAll(data, currentSpace);
-                await Promise.all([
-                  dispatch(fetchAllStars(currentSpace)),
-                  dispatch(fetchAllMovies(currentSpace)),
-                ]);
-
-                showSuccess(
-                  'Import Complete',
-                  `Imported:\n\n• ${result.stars} star${
-                    result.stars !== 1 ? 's' : ''
-                  }\n• ${result.movies} movie${
-                    result.movies !== 1 ? 's' : ''
-                  }\n• ${result.links} link${result.links !== 1 ? 's' : ''}`,
-                );
-              } catch (e: any) {
-                showError(
-                  'Import Failed',
-                  e?.message ?? 'Something went wrong.',
-                );
-              } finally {
-                setImporting(false);
-              }
-            },
-          },
-        ],
-      );
-    } catch (e: any) {
-      showError(e?.message ?? 'Could not read file.');
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const handleImportMedia = async () => {
-    try {
-      setImportingMedia(true);
-      const result = await importMedia();
+      const result = await importBackup();
       await Promise.all([
         dispatch(fetchAllStars(currentSpace)),
         dispatch(fetchAllMovies(currentSpace)),
       ]);
-      Alert.alert(
+      showSuccess(
         'Import Complete',
-        `Imported ${result.imported} image${result.imported !== 1 ? 's' : ''}${
-          result.skipped > 0 ? `, skipped ${result.skipped}` : ''
-        }.`,
+        `Imported ${result.stars} stars, ${result.movies} movies, ${result.imported} media files.`,
       );
     } catch (e: any) {
       if (
@@ -256,12 +148,9 @@ const SettingsScreen = () => {
       }
       showError('Import Failed', e?.message ?? 'Something went wrong.');
     } finally {
-      setImportingMedia(false);
+      setImporting(false);
     }
   };
-
-  const isBusy =
-    exporting || exportingMedia || importing || importingMedia || deleting;
 
   return (
     <View
@@ -378,7 +267,7 @@ const SettingsScreen = () => {
           </>
         )}
 
-        {/* ── DATA (Export/Import) — Private Mode only ──── */}
+        {/* ── DATA — Private Mode only ──────────────────── */}
         {isUnlocked && (
           <>
             <Text
@@ -395,13 +284,12 @@ const SettingsScreen = () => {
                 { backgroundColor: theme.surface, borderColor: theme.border },
               ]}
             >
-              {/* Export Data */}
+              {/* Export Backup */}
               <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-                Export Data
+                Export Backup
               </Text>
               <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-                Export all stars, movies, and their links as a JSON file. Media
-                files are not included.
+                Export all stars, movies, links, and media as a single ZIP file.
               </Text>
               <TouchableOpacity
                 style={[
@@ -418,7 +306,7 @@ const SettingsScreen = () => {
                 {exporting ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.actionFullBtnText}>⬆ Export JSON</Text>
+                  <Text style={styles.actionFullBtnText}>⬆ Export Backup</Text>
                 )}
               </TouchableOpacity>
 
@@ -426,43 +314,13 @@ const SettingsScreen = () => {
                 style={[styles.divider, { backgroundColor: theme.border }]}
               />
 
-              {/* Export Media */}
+              {/* Import Backup */}
               <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-                Export Media
+                Import Backup
               </Text>
               <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-                Export all photos and videos as a ZIP file.
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.actionFullBtn,
-                  {
-                    backgroundColor: exportingMedia
-                      ? theme.primaryLight
-                      : theme.primary,
-                  },
-                ]}
-                onPress={handleExportMedia}
-                disabled={isBusy}
-              >
-                {exportingMedia ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.actionFullBtnText}>⬆ Export Media</Text>
-                )}
-              </TouchableOpacity>
-
-              <View
-                style={[styles.divider, { backgroundColor: theme.border }]}
-              />
-
-              {/* Import Data */}
-              <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-                Import Data
-              </Text>
-              <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-                Import a {COMMON.appName} JSON export. Existing records with
-                matching IDs will be updated; new records will be added.
+                Restore stars, movies, links, and media from a ZIP backup.
+                Existing records with matching IDs will be updated.
               </Text>
               <TouchableOpacity
                 style={[
@@ -479,38 +337,7 @@ const SettingsScreen = () => {
                 {importing ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.actionFullBtnText}>⬇ Import JSON</Text>
-                )}
-              </TouchableOpacity>
-
-              <View
-                style={[styles.divider, { backgroundColor: theme.border }]}
-              />
-
-              {/* Import Media */}
-              <Text style={[styles.dataLabel, { color: theme.text.primary }]}>
-                Import Media
-              </Text>
-              <Text style={[styles.dataDesc, { color: theme.text.muted }]}>
-                Import a {COMMON.appName} media ZIP. Images will be matched to
-                existing stars and movies automatically.
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.actionFullBtn,
-                  {
-                    backgroundColor: importingMedia
-                      ? theme.primaryLight
-                      : theme.primary,
-                  },
-                ]}
-                onPress={handleImportMedia}
-                disabled={isBusy}
-              >
-                {importingMedia ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.actionFullBtnText}>⬇ Import Media</Text>
+                  <Text style={styles.actionFullBtnText}>⬇ Import Backup</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -574,7 +401,6 @@ const SettingsScreen = () => {
             { backgroundColor: theme.surface, borderColor: theme.border },
           ]}
         >
-          {/* Version row — silent tap target for private mode unlock */}
           <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
             <View style={styles.aboutRow}>
               <Text style={[styles.aboutLabel, { color: theme.text.muted }]}>
