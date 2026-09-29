@@ -19,11 +19,13 @@ import BaseDatePicker from '../../../components/BaseDatePicker';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { createStar, updateStar } from '../../../store/thunks/star-thunks';
-import { copyStarProfile } from '../../../services/MediaStorageService';
+import {
+  copyStarProfile,
+  deleteFile,
+} from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { showError } from '../../../utils/toast';
-import LoggerService from '../../../services/LoggerService';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'AddStar'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'AddStar'>;
@@ -80,14 +82,20 @@ const AddStarScreen = () => {
     try {
       const internalPath = await copyStarProfile(uri, starId);
       // Image component needs file:// prefix for local paths
-      setImagePath(
-        internalPath.startsWith('file://')
-          ? internalPath
-          : `file://${internalPath}`,
-      );
+      const stablePath = internalPath.startsWith('file://')
+        ? internalPath
+        : `file://${internalPath}`;
+      setImagePath(`${stablePath}?t=${Date.now()}`);
     } catch (e: any) {
       showError(e?.message ?? 'Failed to save image.');
     }
+  };
+
+  const handleRemoveImage = async () => {
+    if (imagePath) {
+      await deleteFile(imagePath.replace('file://', '').split('?')[0]);
+    }
+    setImagePath(undefined);
   };
 
   const handlePickImage = () => {
@@ -157,7 +165,6 @@ const AddStarScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        LoggerService.log('✏️ Dispatching updateStar...');
         const result = await dispatch(updateStar(updatedStar));
 
         if (updateStar.rejected.match(result)) {
@@ -187,7 +194,6 @@ const AddStarScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        LoggerService.log('⭐ Dispatching createStar...');
         const result = await dispatch(createStar(newStar));
 
         if (createStar.rejected.match(result)) {
@@ -220,7 +226,19 @@ const AddStarScreen = () => {
           onPress={handlePickImage}
         >
           {imagePath ? (
-            <Image source={{ uri: imagePath }} style={styles.image} />
+            <>
+              <Image source={{ uri: imagePath }} style={styles.image} />
+              <TouchableOpacity
+                style={[
+                  styles.removeImageBtn,
+                  { backgroundColor: theme.status.error },
+                ]}
+                onPress={handleRemoveImage}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.removeImageBtnText}>✕</Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <View style={styles.imagePlaceholder}>
               <Text style={styles.imageIcon}>📷</Text>
@@ -468,6 +486,21 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '700',
   },
 });
