@@ -93,7 +93,8 @@ const copyMovieProfile = async (
   await ensureDir(`${mediaRoot()}/movies`);
   await ensureDir(dir);
   const ext = extractExtension(contentUri);
-  const destPath = `${dir}/profile.${ext}`;
+  // Unique name per pick so the Image cache can never serve a stale photo.
+  const destPath = `${dir}/profile_${Date.now()}.${ext}`;
   return copyToInternal(contentUri, destPath);
 };
 
@@ -122,7 +123,8 @@ const copyStarProfile = async (
   await ensureDir(`${mediaRoot()}/stars`);
   await ensureDir(dir);
   const ext = extractExtension(contentUri);
-  const destPath = `${dir}/profile.${ext}`;
+  // Unique name per pick so the Image cache can never serve a stale photo.
+  const destPath = `${dir}/profile_${Date.now()}.${ext}`;
   return copyToInternal(contentUri, destPath);
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -18,16 +18,20 @@ import BaseInput from '../../../components/BaseInput';
 import BaseSectionHeader from '../../../components/BaseSectionHeader';
 import { useAppDispatch, useAppSelector } from '../../../store/store-hooks';
 import { createMovie, updateMovie } from '../../../store/thunks/movie-thunks';
-import { copyMovieProfile } from '../../../services/MediaStorageService';
+import {
+  copyMovieProfile,
+  deleteFile,
+} from '../../../services/MediaStorageService';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { showError } from '../../../utils/toast';
-import LoggerService from '../../../services/LoggerService';
 
 type NavProp = StackNavigationProp<MoviesStackParamList, 'AddMovie'>;
 type RoutePropType = RouteProp<MoviesStackParamList, 'AddMovie'>;
 
 const CURRENT_YEAR = new Date().getFullYear();
+
+const toFsPath = (uri: string): string => uri.replace('file://', '');
 
 const AddMovieScreen = () => {
   const { theme } = useTheme();
@@ -53,6 +57,21 @@ const AddMovieScreen = () => {
     existingMovie?.imagePath,
   );
 
+  // Image bookkeeping: the photo the record started with, files picked during
+  // this session (not yet saved), and whether the save went through.
+  const originalImagePath = useRef(existingMovie?.imagePath).current;
+  const pickedPaths = useRef<string[]>([]);
+  const saved = useRef(false);
+
+  useEffect(() => {
+    const picked = pickedPaths;
+    return () => {
+      if (!saved.current) {
+        picked.current.forEach(path => deleteFile(toFsPath(path)));
+      }
+    };
+  }, []);
+
   // ─── Custom attributes — pre-filled in edit mode ──────────
   const [customAttributes, setCustomAttributes] = useState<
     MovieCustomAttribute[]
@@ -71,13 +90,36 @@ const AddMovieScreen = () => {
   const handlePickedUri = async (uri: string) => {
     try {
       const internalPath = await copyMovieProfile(uri, movieId);
-      setImagePath(
-        internalPath.startsWith('file://')
-          ? internalPath
-          : `file://${internalPath}`,
-      );
+      const newPath = internalPath.startsWith('file://')
+        ? internalPath
+        : `file://${internalPath}`;
+      // Drop the previous unsaved pick from this session (never the original).
+      const previous = pickedPaths.current.pop();
+      if (previous) {
+        await deleteFile(toFsPath(previous));
+      }
+      pickedPaths.current.push(newPath);
+      setImagePath(newPath);
     } catch (e: any) {
       showError(e?.message ?? 'Failed to save image.');
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    const current = imagePath;
+    setImagePath(undefined);
+    if (current && pickedPaths.current.includes(current)) {
+      pickedPaths.current = pickedPaths.current.filter(p => p !== current);
+      await deleteFile(toFsPath(current));
+    }
+  };
+
+  // After a successful save, delete the original photo if it was replaced
+  // or removed. Doing this at save time keeps cancel/back safe.
+  const cleanupReplacedImage = async () => {
+    saved.current = true;
+    if (originalImagePath && originalImagePath !== imagePath) {
+      await deleteFile(toFsPath(originalImagePath));
     }
   };
 
@@ -151,15 +193,12 @@ const AddMovieScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        LoggerService.log('✏️ Dispatching updateMovie...');
         const result = await dispatch(updateMovie(updated));
 
         if (updateMovie.rejected.match(result)) {
           showError(String(result.payload) ?? 'Failed to update movie');
           return;
         }
-
-        LoggerService.log('✅ Movie updated successfully, going back');
       } else {
         // ─── CREATE ───────────────────────────────────────
         const newMovie: Movie = {
@@ -179,17 +218,15 @@ const AddMovieScreen = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        LoggerService.log('🎬 Dispatching createMovie...');
         const result = await dispatch(createMovie(newMovie));
 
         if (createMovie.rejected.match(result)) {
           showError(String(result.payload) ?? 'Failed to save movie');
           return;
         }
-
-        LoggerService.log('✅ Movie saved successfully, going back');
       }
 
+      await cleanupReplacedImage();
       navigation.goBack();
     } catch (e: any) {
       showError(e?.message ?? 'Failed to save movie');
@@ -214,7 +251,19 @@ const AddMovieScreen = () => {
           onPress={handlePickImage}
         >
           {imagePath ? (
-            <Image source={{ uri: imagePath }} style={styles.image} />
+            <>
+              <Image source={{ uri: imagePath }} style={styles.image} />
+              <TouchableOpacity
+                style={[
+                  styles.removeImageBtn,
+                  { backgroundColor: theme.status.error },
+                ]}
+                onPress={handleRemoveImage}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.removeImageBtnText}>✕</Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <View style={styles.imagePlaceholder}>
               <Text style={styles.imageIcon}>🎬</Text>
@@ -442,6 +491,21 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '700',
   },
 });

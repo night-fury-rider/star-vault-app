@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,8 @@ import { showError } from '../../../utils/toast';
 
 type NavProp = StackNavigationProp<StarsStackParamList, 'AddStar'>;
 type RoutePropType = RouteProp<StarsStackParamList, 'AddStar'>;
+
+const toFsPath = (uri: string): string => uri.replace('file://', '');
 
 const AddStarScreen = () => {
   const { theme } = useTheme();
@@ -66,6 +68,21 @@ const AddStarScreen = () => {
     existingStar?.imagePath,
   );
 
+  // Image bookkeeping: the photo the record started with, files picked during
+  // this session (not yet saved), and whether the save went through.
+  const originalImagePath = useRef(existingStar?.imagePath).current;
+  const pickedPaths = useRef<string[]>([]);
+  const saved = useRef(false);
+
+  useEffect(() => {
+    const picked = pickedPaths;
+    return () => {
+      if (!saved.current) {
+        picked.current.forEach(path => deleteFile(toFsPath(path)));
+      }
+    };
+  }, []);
+
   // ─── Custom attributes — pre-filled in edit mode ──────────
   const [customAttributes, setCustomAttributes] = useState<CustomAttribute[]>(
     existingStar?.customAttributes ?? [],
@@ -82,20 +99,37 @@ const AddStarScreen = () => {
     try {
       const internalPath = await copyStarProfile(uri, starId);
       // Image component needs file:// prefix for local paths
-      const stablePath = internalPath.startsWith('file://')
+      const newPath = internalPath.startsWith('file://')
         ? internalPath
         : `file://${internalPath}`;
-      setImagePath(`${stablePath}?t=${Date.now()}`);
+      // Drop the previous unsaved pick from this session (never the original).
+      const previous = pickedPaths.current.pop();
+      if (previous) {
+        await deleteFile(toFsPath(previous));
+      }
+      pickedPaths.current.push(newPath);
+      setImagePath(newPath);
     } catch (e: any) {
       showError(e?.message ?? 'Failed to save image.');
     }
   };
 
   const handleRemoveImage = async () => {
-    if (imagePath) {
-      await deleteFile(imagePath.replace('file://', '').split('?')[0]);
-    }
+    const current = imagePath;
     setImagePath(undefined);
+    if (current && pickedPaths.current.includes(current)) {
+      pickedPaths.current = pickedPaths.current.filter(p => p !== current);
+      await deleteFile(toFsPath(current));
+    }
+  };
+
+  // After a successful save, delete the original photo if it was replaced
+  // or removed. Doing this at save time keeps cancel/back safe.
+  const cleanupReplacedImage = async () => {
+    saved.current = true;
+    if (originalImagePath && originalImagePath !== imagePath) {
+      await deleteFile(toFsPath(originalImagePath));
+    }
   };
 
   const handlePickImage = () => {
@@ -172,6 +206,7 @@ const AddStarScreen = () => {
           return;
         }
 
+        await cleanupReplacedImage();
         navigation.goBack();
       } else {
         // ─── CREATE ───────────────────────────────────────
@@ -201,6 +236,7 @@ const AddStarScreen = () => {
           return;
         }
 
+        await cleanupReplacedImage();
         navigation.goBack();
       }
     } catch (e: any) {
