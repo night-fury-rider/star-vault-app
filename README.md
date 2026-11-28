@@ -15,7 +15,7 @@ A personal, offline-first vault for tracking your favorite stars and movies.
 
 ---
 
-## About
+## 📖 About
 
 Star Vault is a personal media companion for tracking stars and movies — completely offline, completely private.
 
@@ -29,7 +29,7 @@ Star Vault is a personal media companion for tracking stars and movies — compl
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 A few decisions shaped how this app is built — and why it holds up as the feature set grows.
 
@@ -45,7 +45,7 @@ Rather than maintaining two separate databases for standard and private modes, a
 **Safe schema migrations**  
 Each migration checks `PRAGMA table_info()` before attempting `ALTER TABLE`. Existing installs upgrade cleanly without wiping data — something that matters the moment real users are involved.
 
-**🎨 Theming**
+** 🎨 Theming**
 
 Star Vault includes a custom theming system built with React Context API — no external libraries.
 
@@ -167,7 +167,7 @@ npm run export-src
 
 ---
 
-## Wiki
+## 📚 Wiki
 
 - [Wireless Hot Reload on Mobile](https://github.com/night-fury-rider/react-native-template/wiki/Wireless-Hot-Reload-on-Mobile)
 - [Create a Logo](https://github.com/night-fury-rider/react-native-template/wiki/Create-a-Logo)
@@ -177,6 +177,6 @@ npm run export-src
 - [Troubleshooting](https://github.com/night-fury-rider/react-native-template/wiki/Troubleshooting)
 - [SQLite Database Inspection](https://github.com/night-fury-rider/react-native-template/wiki/SQLite-Database-Inspection)
 
-## License
+## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
